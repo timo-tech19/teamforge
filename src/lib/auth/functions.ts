@@ -1,5 +1,26 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { getSupabaseServerClient } from "#/lib/supabase/server";
+
+export const loginSchema = z.object({
+	email: z.email("Please enter a valid email address"),
+	password: z.string().min(1, "Password is required"),
+});
+
+export const signupSchema = z.object({
+	displayName: z
+		.string()
+		.min(2, "Display name must be at least 2 characters")
+		.max(50, "Display name must be under 50 characters"),
+	email: z.email("Please enter a valid email address"),
+	password: z
+		.string()
+		.min(6, "Password must be at least 6 characters")
+		.max(72, "Password must be under 72 characters"),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;
 
 export const getUser = createServerFn({ method: "GET" }).handler(async () => {
 	const supabase = getSupabaseServerClient();
@@ -10,13 +31,7 @@ export const getUser = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const loginWithEmail = createServerFn({ method: "POST" })
-	.inputValidator(
-		(data: unknown) =>
-			data as {
-				email: string;
-				password: string;
-			},
-	)
+	.inputValidator(loginSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { error } = await supabase.auth.signInWithPassword({
@@ -32,14 +47,7 @@ export const loginWithEmail = createServerFn({ method: "POST" })
 	});
 
 export const signupWithEmail = createServerFn({ method: "POST" })
-	.inputValidator(
-		(data: unknown) =>
-			data as {
-				email: string;
-				password: string;
-				displayName: string;
-			},
-	)
+	.inputValidator(signupSchema)
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
 		const { error } = await supabase.auth.signUp({

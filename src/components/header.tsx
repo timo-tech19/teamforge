@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import ThemeToggle from "./ThemeToggle";
+import ThemeToggle from "./theme-toggle";
+import { Button } from "./ui/button";
 
 export default function Header() {
 	return (
@@ -11,7 +12,15 @@ export default function Header() {
 				>
 					TeamForge
 				</Link>
-				<ThemeToggle />
+				<div className="flex items-center gap-2">
+					<ThemeToggle />
+					<Button asChild variant="ghost" size="sm">
+						<Link to="/login">Sign in</Link>
+					</Button>
+					<Button asChild size="sm">
+						<Link to="/signup">Sign up</Link>
+					</Button>
+				</div>
 			</nav>
 		</header>
 	);
