@@ -1,29 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Button } from "#/components/ui/button";
 import { getUser, logout } from "#/lib/auth/functions";
 
 export const Route = createFileRoute("/workspaces")({
 	beforeLoad: async () => {
 		const user = await getUser();
 		if (!user) {
-			throw new Error("Not authenticated");
+			throw redirect({ to: "/login" });
 		}
 		return { user };
-	},
-	errorComponent: () => {
-		return (
-			<main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-				<div className="text-center">
-					<h1 className="text-2xl font-bold text-foreground">Access denied</h1>
-					<p className="mt-2 text-muted-foreground">
-						You need to{" "}
-						<a href="/login" className="font-medium underline">
-							sign in
-						</a>{" "}
-						to view this page.
-					</p>
-				</div>
-			</main>
-		);
 	},
 	component: WorkspacesPage,
 });
@@ -33,7 +18,7 @@ function WorkspacesPage() {
 
 	async function handleLogout() {
 		await logout();
-		window.location.href = "/login";
+		window.location.href = "/";
 	}
 
 	return (
@@ -45,13 +30,9 @@ function WorkspacesPage() {
 						Signed in as {user.email}
 					</p>
 				</div>
-				<button
-					type="button"
-					onClick={handleLogout}
-					className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
-				>
+				<Button variant="outline" onClick={handleLogout}>
 					Sign out
-				</button>
+				</Button>
 			</div>
 			<div className="mt-8 rounded-lg border border-border p-8 text-center text-muted-foreground">
 				No workspaces yet. We'll build this next.
