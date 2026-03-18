@@ -13,6 +13,9 @@ import { Route as WorkspacesRouteImport } from './routes/workspaces'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WSlugRouteImport } from './routes/w/$slug'
+import { Route as WSlugIndexRouteImport } from './routes/w/$slug/index'
+import { Route as WSlugSettingsRouteImport } from './routes/w/$slug/settings'
 
 const WorkspacesRoute = WorkspacesRouteImport.update({
   id: '/workspaces',
@@ -34,18 +37,38 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WSlugRoute = WSlugRouteImport.update({
+  id: '/w/$slug',
+  path: '/w/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WSlugIndexRoute = WSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WSlugRoute,
+} as any)
+const WSlugSettingsRoute = WSlugSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => WSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/workspaces': typeof WorkspacesRoute
+  '/w/$slug': typeof WSlugRouteWithChildren
+  '/w/$slug/settings': typeof WSlugSettingsRoute
+  '/w/$slug/': typeof WSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/workspaces': typeof WorkspacesRoute
+  '/w/$slug/settings': typeof WSlugSettingsRoute
+  '/w/$slug': typeof WSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +76,37 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/workspaces': typeof WorkspacesRoute
+  '/w/$slug': typeof WSlugRouteWithChildren
+  '/w/$slug/settings': typeof WSlugSettingsRoute
+  '/w/$slug/': typeof WSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/workspaces'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/workspaces'
+    | '/w/$slug'
+    | '/w/$slug/settings'
+    | '/w/$slug/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/workspaces'
-  id: '__root__' | '/' | '/login' | '/signup' | '/workspaces'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/workspaces'
+    | '/w/$slug/settings'
+    | '/w/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/workspaces'
+    | '/w/$slug'
+    | '/w/$slug/settings'
+    | '/w/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +114,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   WorkspacesRoute: typeof WorkspacesRoute
+  WSlugRoute: typeof WSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +147,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/w/$slug': {
+      id: '/w/$slug'
+      path: '/w/$slug'
+      fullPath: '/w/$slug'
+      preLoaderRoute: typeof WSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/w/$slug/': {
+      id: '/w/$slug/'
+      path: '/'
+      fullPath: '/w/$slug/'
+      preLoaderRoute: typeof WSlugIndexRouteImport
+      parentRoute: typeof WSlugRoute
+    }
+    '/w/$slug/settings': {
+      id: '/w/$slug/settings'
+      path: '/settings'
+      fullPath: '/w/$slug/settings'
+      preLoaderRoute: typeof WSlugSettingsRouteImport
+      parentRoute: typeof WSlugRoute
+    }
   }
 }
+
+interface WSlugRouteChildren {
+  WSlugSettingsRoute: typeof WSlugSettingsRoute
+  WSlugIndexRoute: typeof WSlugIndexRoute
+}
+
+const WSlugRouteChildren: WSlugRouteChildren = {
+  WSlugSettingsRoute: WSlugSettingsRoute,
+  WSlugIndexRoute: WSlugIndexRoute,
+}
+
+const WSlugRouteWithChildren = WSlugRoute._addFileChildren(WSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   WorkspacesRoute: WorkspacesRoute,
+  WSlugRoute: WSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
