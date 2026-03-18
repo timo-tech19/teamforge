@@ -12,7 +12,10 @@
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "check": "biome check",
+    "db:gen-types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase migration new"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
