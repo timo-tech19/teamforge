@@ -16,9 +16,7 @@ function getInitialMode(): ThemeMode {
 }
 
 function applyThemeMode(mode: ThemeMode) {
-	const prefersDark = window.matchMedia(
-		"(prefers-color-scheme: dark)",
-	).matches;
+	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
 	const resolved = mode === "auto" ? (prefersDark ? "dark" : "light") : mode;
 
 	document.documentElement.classList.remove("light", "dark");
