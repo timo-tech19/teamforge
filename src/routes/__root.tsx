@@ -1,8 +1,11 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	HeadContent,
+	Outlet,
+	Scripts,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import Footer from "../components/footer";
-import Header from "../components/header";
 
 import appCss from "../styles.css?url";
 
@@ -30,6 +33,7 @@ export const Route = createRootRoute({
 		],
 	}),
 	shellComponent: RootDocument,
+	component: RootLayout,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -41,9 +45,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased wrap-anywhere bg-background text-foreground">
-				<Header />
 				{children}
-				<Footer />
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",
@@ -59,4 +61,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</body>
 		</html>
 	);
+}
+
+function RootLayout() {
+	return <Outlet />;
 }

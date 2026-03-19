@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	getRouteApi,
+	useNavigate,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "#/components/ui/button";
 import {
@@ -17,10 +21,10 @@ export const Route = createFileRoute("/w/$slug/settings")({
 	component: SettingsPage,
 });
 
+const workspaceRoute = getRouteApi("/w/$slug");
+
 function SettingsPage() {
-	const { workspace } = Route.useRouteContext() as {
-		workspace: { id: string; name: string; slug: string; role: string };
-	};
+	const { workspace } = workspaceRoute.useLoaderData();
 	const navigate = useNavigate();
 	const [name, setName] = useState(workspace.name);
 	const [saving, setSaving] = useState(false);

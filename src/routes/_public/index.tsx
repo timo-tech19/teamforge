@@ -11,7 +11,7 @@ import {
 import { Button } from "#/components/ui/button";
 import { getUser } from "#/lib/auth/functions";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_public/")({
 	beforeLoad: async () => {
 		const user = await getUser();
 		if (user) {

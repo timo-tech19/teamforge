@@ -133,7 +133,7 @@ export function CreateWorkspaceDialog({
 					<div className="space-y-2">
 						<Label htmlFor="ws-slug">URL slug</Label>
 						<div className="flex items-center gap-0">
-							<span className="flex h-9 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+							<span className="flex h-9 shrink-0 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
 								/w/
 							</span>
 							<Input
