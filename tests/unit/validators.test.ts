@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loginSchema, signupSchema } from "#/lib/auth/functions";
+import { createProjectSchema } from "#/lib/project/functions";
 import { createWorkspaceSchema } from "#/lib/workspace/functions";
 
 describe("loginSchema", () => {
@@ -192,6 +193,78 @@ describe("createWorkspaceSchema", () => {
 		const result = createWorkspaceSchema.safeParse({
 			name: "Acme",
 			slug: "acme_corp",
+		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("createProjectSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid project input", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: validUuid,
+			name: "Website Redesign",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts project with description", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: validUuid,
+			name: "Website Redesign",
+			description: "Revamp the marketing site",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts project without description", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: validUuid,
+			name: "Website Redesign",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.description).toBeUndefined();
+		}
+	});
+
+	it("rejects name under 2 characters", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: validUuid,
+			name: "A",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects name over 100 characters", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: validUuid,
+			name: "A".repeat(101),
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects description over 500 characters", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: validUuid,
+			name: "Valid Name",
+			description: "A".repeat(501),
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid workspace ID", () => {
+		const result = createProjectSchema.safeParse({
+			workspaceId: "not-a-uuid",
+			name: "Valid Name",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects missing workspace ID", () => {
+		const result = createProjectSchema.safeParse({
+			name: "Valid Name",
 		});
 		expect(result.success).toBe(false);
 	});
