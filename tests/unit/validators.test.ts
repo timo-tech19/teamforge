@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loginSchema, signupSchema } from "#/lib/auth/functions";
 import { createCommentSchema } from "#/lib/comment/functions";
 import { inviteMemberSchema } from "#/lib/member/functions";
+import { addProjectMemberSchema } from "#/lib/project-member/functions";
 import { createProjectSchema } from "#/lib/project/functions";
 import { createTaskSchema } from "#/lib/task/functions";
 import { createWorkspaceSchema } from "#/lib/workspace/functions";
@@ -444,6 +445,55 @@ describe("inviteMemberSchema", () => {
 		const result = inviteMemberSchema.safeParse({
 			workspaceId: "not-a-uuid",
 			email: "user@example.com",
+		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("addProjectMemberSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid input", () => {
+		const result = addProjectMemberSchema.safeParse({
+			projectId: validUuid,
+			userId: validUuid,
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("defaults role to member", () => {
+		const result = addProjectMemberSchema.safeParse({
+			projectId: validUuid,
+			userId: validUuid,
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.role).toBe("member");
+		}
+	});
+
+	it("accepts valid role override", () => {
+		const result = addProjectMemberSchema.safeParse({
+			projectId: validUuid,
+			userId: validUuid,
+			role: "lead",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects invalid role", () => {
+		const result = addProjectMemberSchema.safeParse({
+			projectId: validUuid,
+			userId: validUuid,
+			role: "admin",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid project ID", () => {
+		const result = addProjectMemberSchema.safeParse({
+			projectId: "not-a-uuid",
+			userId: validUuid,
 		});
 		expect(result.success).toBe(false);
 	});

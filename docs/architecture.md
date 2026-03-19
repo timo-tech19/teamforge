@@ -178,6 +178,14 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `inviteMember` | POST | Invite user by email (looks up via RPC, inserts as pending) |
 | `updateMemberRole` | POST | Change member role (admin-only, enforced by RLS) |
 | `removeMember` | POST | Remove member or leave workspace (RLS: owner or self) |
+| `listPendingInvitations` | GET | List workspaces with pending invitations for current user |
+| `acceptInvitation` | POST | Accept workspace invitation (pending → active) |
+| `declineInvitation` | POST | Decline workspace invitation (deletes membership) |
+| `listProjectMembers` | GET | List project members with profiles |
+| `listAvailableMembers` | GET | Workspace members not yet in a project |
+| `addProjectMember` | POST | Add workspace member to project (lead/admin only) |
+| `updateProjectMemberRole` | POST | Change project member role |
+| `removeProjectMember` | POST | Remove from project (lead/admin or self) |
 
 ## CI/CD
 
