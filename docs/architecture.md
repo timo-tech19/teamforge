@@ -169,6 +169,10 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `createComment` | POST | Add comment to a task (author_id enforced by RLS) |
 | `updateComment` | POST | Edit own comment (author-only, enforced by RLS) |
 | `deleteComment` | POST | Delete comment (author, lead, or admin) |
+| `listAttachmentsByTask` | GET | List file attachments on a task |
+| `uploadAttachment` | POST | Upload file to Supabase Storage + create metadata |
+| `getAttachmentUrl` | GET | Generate signed download URL (1 hour expiry) |
+| `deleteAttachment` | POST | Remove file from storage + delete metadata |
 
 ## CI/CD
 

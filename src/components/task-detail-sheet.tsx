@@ -1,6 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
-import { Calendar, Flag, MessageSquare, Trash2 } from "lucide-react";
+import { Calendar, Flag, MessageSquare, Paperclip, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AttachmentList } from "#/components/attachment-list";
 import { CommentList } from "#/components/comment-list";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -16,6 +17,7 @@ import {
 } from "#/components/ui/sheet";
 import { Spinner } from "#/components/ui/spinner";
 import { Textarea } from "#/components/ui/textarea";
+import { listAttachmentsByTask } from "#/lib/attachment/functions";
 import { listCommentsByTask } from "#/lib/comment/functions";
 import { deleteTask, updateTask } from "#/lib/task/functions";
 
@@ -59,6 +61,7 @@ const statusLabels: Record<string, string> = {
 
 export function TaskDetailSheet({
 	task,
+	projectId,
 	open,
 	onOpenChange,
 	canDelete,
@@ -66,6 +69,7 @@ export function TaskDetailSheet({
 	canModerateComments,
 }: {
 	task: Task | null;
+	projectId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	canDelete: boolean;
@@ -77,28 +81,36 @@ export function TaskDetailSheet({
 	const [deleting, setDeleting] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [comments, setComments] = useState<Comment[]>([]);
-	const [loadingComments, setLoadingComments] = useState(false);
+	const [attachments, setAttachments] = useState<
+		Awaited<ReturnType<typeof listAttachmentsByTask>>
+	>([]);
+	const [loadingData, setLoadingData] = useState(false);
 
-	// Fetch comments when task changes or sheet opens
+	// Fetch comments and attachments when task changes or sheet opens
 	useEffect(() => {
 		if (!task || !open) {
 			setComments([]);
+			setAttachments([]);
 			return;
 		}
 
 		let cancelled = false;
-		setLoadingComments(true);
+		setLoadingData(true);
 
-		listCommentsByTask({ data: { taskId: task.id } })
-			.then((result) => {
+		Promise.all([
+			listCommentsByTask({ data: { taskId: task.id } }),
+			listAttachmentsByTask({ data: { taskId: task.id } }),
+		])
+			.then(([commentsResult, attachmentsResult]) => {
 				if (!cancelled) {
-					setComments(result);
-					setLoadingComments(false);
+					setComments(commentsResult);
+					setAttachments(attachmentsResult);
+					setLoadingData(false);
 				}
 			})
 			.catch(() => {
 				if (!cancelled) {
-					setLoadingComments(false);
+					setLoadingData(false);
 				}
 			});
 
@@ -156,10 +168,14 @@ export function TaskDetailSheet({
 		}
 	}
 
-	// Refetch comments after adding/editing/deleting
 	async function refreshComments() {
 		const result = await listCommentsByTask({ data: { taskId } });
 		setComments(result);
+	}
+
+	async function refreshAttachments() {
+		const result = await listAttachmentsByTask({ data: { taskId } });
+		setAttachments(result);
 	}
 
 	return (
@@ -252,6 +268,34 @@ export function TaskDetailSheet({
 					</div>
 				</form>
 
+				{/* Attachments section */}
+				<div className="px-4 pb-4">
+					<Separator className="mb-4" />
+					<h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+						<Paperclip className="size-4" />
+						Attachments
+						{attachments.length > 0 && (
+							<span className="text-xs text-muted-foreground">
+								({attachments.length})
+							</span>
+						)}
+					</h3>
+					{loadingData ? (
+						<div className="flex items-center justify-center py-4">
+							<Spinner />
+						</div>
+					) : (
+						<AttachmentList
+							taskId={taskId}
+							projectId={projectId}
+							attachments={attachments}
+							canUpload={true}
+							canDelete={canDelete}
+							onAttachmentChange={refreshAttachments}
+						/>
+					)}
+				</div>
+
 				{/* Comments section */}
 				<div className="px-4 pb-4">
 					<Separator className="mb-4" />
@@ -264,7 +308,7 @@ export function TaskDetailSheet({
 							</span>
 						)}
 					</h3>
-					{loadingComments ? (
+					{loadingData ? (
 						<div className="flex items-center justify-center py-4">
 							<Spinner />
 						</div>
