@@ -36,6 +36,7 @@ export const listWorkspaces = createServerFn({ method: "GET" }).handler(
 				)
 			`,
 			)
+			.eq("workspace_members.status", "active")
 			.order("created_at", { ascending: false });
 
 		if (error) {
