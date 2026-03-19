@@ -57,6 +57,7 @@ __root.tsx                    ← bare HTML shell (no header/footer)
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
     ├── w/$slug/settings.tsx  ← /w/:slug/settings
     ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
+    ├── w/$slug/members.tsx             ← /w/:slug/members (member management)
     └── w/$slug/projects/$projectId.tsx ← /w/:slug/projects/:id (kanban board + settings)
 ```
 
@@ -173,6 +174,18 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `uploadAttachment` | POST | Upload file to Supabase Storage + create metadata |
 | `getAttachmentUrl` | GET | Generate signed download URL (1 hour expiry) |
 | `deleteAttachment` | POST | Remove file from storage + delete metadata |
+| `listMembers` | GET | List workspace members with profiles |
+| `inviteMember` | POST | Invite user by email (looks up via RPC, inserts as pending) |
+| `updateMemberRole` | POST | Change member role (admin-only, enforced by RLS) |
+| `removeMember` | POST | Remove member or leave workspace (RLS: owner or self) |
+| `listPendingInvitations` | GET | List workspaces with pending invitations for current user |
+| `acceptInvitation` | POST | Accept workspace invitation (pending → active) |
+| `declineInvitation` | POST | Decline workspace invitation (deletes membership) |
+| `listProjectMembers` | GET | List project members with profiles |
+| `listAvailableMembers` | GET | Workspace members not yet in a project |
+| `addProjectMember` | POST | Add workspace member to project (lead/admin only) |
+| `updateProjectMemberRole` | POST | Change project member role |
+| `removeProjectMember` | POST | Remove from project (lead/admin or self) |
 
 ## CI/CD
 

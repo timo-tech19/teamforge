@@ -71,15 +71,26 @@ export const Route = createFileRoute("/w/$slug")({
 	component: WorkspaceLayout,
 });
 
-const navItems = [
-	{ label: "Dashboard", icon: Home, to: ".", segment: "" },
-	{ label: "Projects", icon: Layers, to: "./projects", segment: "projects" },
-	{ label: "Members", icon: Users, to: "./members", segment: "members" },
-	{ label: "Settings", icon: Settings, to: "./settings", segment: "settings" },
-];
-
 function WorkspaceLayout() {
 	const { workspace, profile, projects } = Route.useLoaderData();
+
+	const isAdmin = workspace.role === "owner" || workspace.role === "admin";
+
+	const navItems = [
+		{ label: "Dashboard", icon: Home, to: ".", segment: "" },
+		{ label: "Projects", icon: Layers, to: "./projects", segment: "projects" },
+		{ label: "Members", icon: Users, to: "./members", segment: "members" },
+		...(isAdmin
+			? [
+					{
+						label: "Settings",
+						icon: Settings,
+						to: "./settings",
+						segment: "settings",
+					},
+				]
+			: []),
+	];
 	const location = useLocation();
 
 	async function handleLogout() {

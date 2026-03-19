@@ -366,6 +366,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_user_id_by_email: { Args: { _email: string }; Returns: string }
       get_project_role: { Args: { _project_id: string }; Returns: string }
       get_workspace_role: { Args: { _workspace_id: string }; Returns: string }
       is_project_member: { Args: { _project_id: string }; Returns: boolean }
@@ -378,6 +379,10 @@ export type Database = {
         Returns: boolean
       }
       is_workspace_member: { Args: { _workspace_id: string }; Returns: boolean }
+      is_workspace_member_any_status: {
+        Args: { _workspace_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       activity_action:

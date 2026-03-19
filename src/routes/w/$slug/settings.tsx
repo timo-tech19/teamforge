@@ -1,6 +1,7 @@
 import {
 	createFileRoute,
 	getRouteApi,
+	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
 import { useState } from "react";
@@ -15,9 +16,28 @@ import {
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Spinner } from "#/components/ui/spinner";
-import { deleteWorkspace, updateWorkspace } from "#/lib/workspace/functions";
+import {
+	deleteWorkspace,
+	getWorkspaceBySlug,
+	updateWorkspace,
+} from "#/lib/workspace/functions";
 
 export const Route = createFileRoute("/w/$slug/settings")({
+	loader: async ({ params }) => {
+		const workspace = await getWorkspaceBySlug({
+			data: { slug: params.slug },
+		});
+		if (!workspace) {
+			throw redirect({ to: "/workspaces" });
+		}
+		const role = workspace.role;
+		if (role !== "owner" && role !== "admin") {
+			throw redirect({
+				to: "/w/$slug",
+				params: { slug: params.slug },
+			});
+		}
+	},
 	component: SettingsPage,
 });
 

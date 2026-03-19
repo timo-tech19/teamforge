@@ -17,6 +17,7 @@ import { Route as PublicSignupRouteImport } from './routes/_public/signup'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as WSlugIndexRouteImport } from './routes/w/$slug/index'
 import { Route as WSlugSettingsRouteImport } from './routes/w/$slug/settings'
+import { Route as WSlugMembersRouteImport } from './routes/w/$slug/members'
 import { Route as WSlugProjectsIndexRouteImport } from './routes/w/$slug/projects/index'
 import { Route as WSlugProjectsProjectIdRouteImport } from './routes/w/$slug/projects/$projectId'
 
@@ -59,6 +60,11 @@ const WSlugSettingsRoute = WSlugSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => WSlugRoute,
 } as any)
+const WSlugMembersRoute = WSlugMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => WSlugRoute,
+} as any)
 const WSlugProjectsIndexRoute = WSlugProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof PublicSignupRoute
   '/workspaces': typeof PublicWorkspacesRoute
   '/w/$slug': typeof WSlugRouteWithChildren
+  '/w/$slug/members': typeof WSlugMembersRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug/': typeof WSlugIndexRoute
   '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/signup': typeof PublicSignupRoute
   '/workspaces': typeof PublicWorkspacesRoute
   '/': typeof PublicIndexRoute
+  '/w/$slug/members': typeof WSlugMembersRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug': typeof WSlugIndexRoute
   '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/_public/workspaces': typeof PublicWorkspacesRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/_public/': typeof PublicIndexRoute
+  '/w/$slug/members': typeof WSlugMembersRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug/': typeof WSlugIndexRoute
   '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/workspaces'
     | '/w/$slug'
+    | '/w/$slug/members'
     | '/w/$slug/settings'
     | '/w/$slug/'
     | '/w/$slug/projects/$projectId'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/workspaces'
     | '/'
+    | '/w/$slug/members'
     | '/w/$slug/settings'
     | '/w/$slug'
     | '/w/$slug/projects/$projectId'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/_public/workspaces'
     | '/w/$slug'
     | '/_public/'
+    | '/w/$slug/members'
     | '/w/$slug/settings'
     | '/w/$slug/'
     | '/w/$slug/projects/$projectId'
@@ -203,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugSettingsRouteImport
       parentRoute: typeof WSlugRoute
     }
+    '/w/$slug/members': {
+      id: '/w/$slug/members'
+      path: '/members'
+      fullPath: '/w/$slug/members'
+      preLoaderRoute: typeof WSlugMembersRouteImport
+      parentRoute: typeof WSlugRoute
+    }
     '/w/$slug/projects/': {
       id: '/w/$slug/projects/'
       path: '/projects'
@@ -238,6 +257,7 @@ const PublicRouteWithChildren =
   PublicRoute._addFileChildren(PublicRouteChildren)
 
 interface WSlugRouteChildren {
+  WSlugMembersRoute: typeof WSlugMembersRoute
   WSlugSettingsRoute: typeof WSlugSettingsRoute
   WSlugIndexRoute: typeof WSlugIndexRoute
   WSlugProjectsProjectIdRoute: typeof WSlugProjectsProjectIdRoute
@@ -245,6 +265,7 @@ interface WSlugRouteChildren {
 }
 
 const WSlugRouteChildren: WSlugRouteChildren = {
+  WSlugMembersRoute: WSlugMembersRoute,
   WSlugSettingsRoute: WSlugSettingsRoute,
   WSlugIndexRoute: WSlugIndexRoute,
   WSlugProjectsProjectIdRoute: WSlugProjectsProjectIdRoute,

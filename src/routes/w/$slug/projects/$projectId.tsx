@@ -3,9 +3,11 @@ import {
 	getRouteApi,
 	redirect,
 	useNavigate,
+	useRouter,
 } from "@tanstack/react-router";
-import { Plus, Settings, Trash2 } from "lucide-react";
+import { LogOut, Plus, Settings, Shield, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
+import { AddProjectMemberDialog } from "#/components/add-project-member-dialog";
 import { CreateTaskDialog } from "#/components/create-task-dialog";
 import { KanbanBoard, type Task } from "#/components/kanban-board";
 import { TaskDetailSheet } from "#/components/task-detail-sheet";
@@ -18,6 +20,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
@@ -30,11 +39,17 @@ import {
 } from "#/components/ui/sheet";
 import { Spinner } from "#/components/ui/spinner";
 import { Textarea } from "#/components/ui/textarea";
+import UserAvatar from "#/components/user-avatar";
 import {
 	deleteProject,
 	getProjectById,
 	updateProject,
 } from "#/lib/project/functions";
+import {
+	listProjectMembers,
+	removeProjectMember,
+	updateProjectMemberRole,
+} from "#/lib/project-member/functions";
 import { listTasksByProject } from "#/lib/task/functions";
 
 export const Route = createFileRoute("/w/$slug/projects/$projectId")({
@@ -48,10 +63,11 @@ export const Route = createFileRoute("/w/$slug/projects/$projectId")({
 				params: { slug: params.slug },
 			});
 		}
-		const tasks = await listTasksByProject({
-			data: { projectId: params.projectId },
-		});
-		return { project, tasks };
+		const [tasks, projectMembers] = await Promise.all([
+			listTasksByProject({ data: { projectId: params.projectId } }),
+			listProjectMembers({ data: { projectId: params.projectId } }),
+		]);
+		return { project, tasks, projectMembers };
 	},
 	component: ProjectDetailPage,
 });
@@ -67,8 +83,9 @@ const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
 function ProjectDetailPage() {
 	const { workspace } = workspaceRoute.useLoaderData();
 	const { user } = Route.useRouteContext();
-	const { project, tasks } = Route.useLoaderData();
+	const { project, tasks, projectMembers } = Route.useLoaderData();
 	const navigate = useNavigate();
+	const router = useRouter();
 
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 	const [taskSheetOpen, setTaskSheetOpen] = useState(false);
@@ -83,11 +100,37 @@ function ProjectDetailPage() {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	const isLead = project.role === "lead";
+	const isProjectViewer = project.role === "viewer";
 	const wsRole = workspace.role;
 	const isWsAdmin = wsRole === "owner" || wsRole === "admin";
 	const canEdit = isLead || isWsAdmin;
 	const canDelete = isWsAdmin;
+	const canCreateTasks = !isProjectViewer || isWsAdmin;
 	const canDeleteTasks = isLead || isWsAdmin;
+	const canManageMembers = isLead || isWsAdmin;
+	const [memberLoading, setMemberLoading] = useState<string | null>(null);
+
+	async function handleMemberRoleChange(userId: string, newRole: string) {
+		setMemberLoading(userId);
+		await updateProjectMemberRole({
+			data: {
+				projectId: project.id,
+				userId,
+				role: newRole as "lead" | "member" | "viewer",
+			},
+		});
+		setMemberLoading(null);
+		await router.invalidate();
+	}
+
+	async function handleRemoveMember(userId: string) {
+		setMemberLoading(userId);
+		await removeProjectMember({
+			data: { projectId: project.id, userId },
+		});
+		setMemberLoading(null);
+		await router.invalidate();
+	}
 
 	function handleTaskClick(task: Task) {
 		setSelectedTask(task);
@@ -144,12 +187,14 @@ function ProjectDetailPage() {
 					</Badge>
 				</div>
 				<div className="flex items-center gap-2">
-					<CreateTaskDialog projectId={project.id}>
-						<Button size="sm">
-							<Plus />
-							Add task
-						</Button>
-					</CreateTaskDialog>
+					{canCreateTasks && (
+						<CreateTaskDialog projectId={project.id}>
+							<Button size="sm">
+								<Plus />
+								Add task
+							</Button>
+						</CreateTaskDialog>
+					)}
 					{canEdit && (
 						<Sheet>
 							<SheetTrigger asChild>
@@ -210,6 +255,135 @@ function ProjectDetailPage() {
 											)}
 										</div>
 									</form>
+
+									{/* Project members */}
+									<div>
+										<div className="mb-3 flex items-center justify-between">
+											<h3 className="text-sm font-medium text-foreground">
+												Members ({projectMembers.length})
+											</h3>
+											{canManageMembers && (
+												<AddProjectMemberDialog
+													projectId={project.id}
+													workspaceId={project.workspaceId}
+												>
+													<Button size="xs" variant="outline">
+														<UserPlus className="size-3" />
+														Add
+													</Button>
+												</AddProjectMemberDialog>
+											)}
+										</div>
+										<div className="space-y-2">
+											{projectMembers.map((member) => {
+												const isSelf = member.userId === user.id;
+												const isLead = member.role === "lead";
+												const canChange = canManageMembers && !isSelf;
+												const canRemove =
+													(canManageMembers && !isSelf) || (isSelf && !isLead);
+												const isLoading = memberLoading === member.userId;
+
+												return (
+													<div
+														key={member.userId}
+														className="flex items-center gap-3 rounded-md border border-border px-3 py-2"
+													>
+														<UserAvatar
+															displayName={member.displayName}
+															avatarUrl={member.avatarUrl}
+															size="sm"
+														/>
+														<div className="flex-1">
+															<span className="text-sm font-medium text-foreground">
+																{member.displayName}
+															</span>
+															{isSelf && (
+																<span className="ml-1 text-xs text-muted-foreground">
+																	(you)
+																</span>
+															)}
+															<div className="mt-0.5">
+																<Badge
+																	variant="outline"
+																	className="text-[10px]"
+																>
+																	<Shield className="size-2.5" />
+																	{member.role}
+																</Badge>
+															</div>
+														</div>
+														{(canChange || canRemove) && (
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button
+																		variant="outline"
+																		size="xs"
+																		disabled={isLoading}
+																	>
+																		{isLoading ? <Spinner /> : "Manage"}
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	{canChange && (
+																		<>
+																			{member.role !== "lead" && (
+																				<DropdownMenuItem
+																					onClick={() =>
+																						handleMemberRoleChange(
+																							member.userId,
+																							"lead",
+																						)
+																					}
+																				>
+																					Make Lead
+																				</DropdownMenuItem>
+																			)}
+																			{member.role !== "member" && (
+																				<DropdownMenuItem
+																					onClick={() =>
+																						handleMemberRoleChange(
+																							member.userId,
+																							"member",
+																						)
+																					}
+																				>
+																					Make Member
+																				</DropdownMenuItem>
+																			)}
+																			{member.role !== "viewer" && (
+																				<DropdownMenuItem
+																					onClick={() =>
+																						handleMemberRoleChange(
+																							member.userId,
+																							"viewer",
+																						)
+																					}
+																				>
+																					Make Viewer
+																				</DropdownMenuItem>
+																			)}
+																			<DropdownMenuSeparator />
+																		</>
+																	)}
+																	{canRemove && (
+																		<DropdownMenuItem
+																			onClick={() =>
+																				handleRemoveMember(member.userId)
+																			}
+																			className="text-destructive-foreground"
+																		>
+																			<LogOut className="size-3.5" />
+																			{isSelf ? "Leave project" : "Remove"}
+																		</DropdownMenuItem>
+																	)}
+																</DropdownMenuContent>
+															</DropdownMenu>
+														)}
+													</div>
+												);
+											})}
+										</div>
+									</div>
 
 									{canDelete && (
 										<Card className="border-destructive/30">

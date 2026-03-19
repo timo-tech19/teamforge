@@ -43,21 +43,17 @@ export const getProjectById = createServerFn({ method: "GET" })
 	.inputValidator(z.object({ projectId: z.uuid() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
+
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+
+		// Fetch project without membership join — workspace admins can see
+		// projects without being project members (two-path SELECT policy).
 		const { data: project, error } = await supabase
 			.from("projects")
 			.select(
-				`
-				id,
-				name,
-				description,
-				status,
-				workspace_id,
-				created_by,
-				created_at,
-				project_members!inner (
-					role
-				)
-			`,
+				"id, name, description, status, workspace_id, created_by, created_at",
 			)
 			.eq("id", data.projectId)
 			.single();
@@ -65,6 +61,14 @@ export const getProjectById = createServerFn({ method: "GET" })
 		if (error) {
 			return null;
 		}
+
+		// Separately fetch the current user's project role (if any)
+		const { data: membership } = await supabase
+			.from("project_members")
+			.select("role")
+			.eq("project_id", data.projectId)
+			.eq("user_id", user?.id ?? "")
+			.single();
 
 		return {
 			id: project.id,
@@ -74,7 +78,7 @@ export const getProjectById = createServerFn({ method: "GET" })
 			workspaceId: project.workspace_id,
 			createdBy: project.created_by,
 			createdAt: project.created_at,
-			role: project.project_members[0]?.role,
+			role: membership?.role ?? null,
 		};
 	});
 
