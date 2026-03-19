@@ -4,7 +4,11 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
+import { Plus, Settings, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { CreateTaskDialog } from "#/components/create-task-dialog";
+import { KanbanBoard, type Task } from "#/components/kanban-board";
+import { TaskDetailSheet } from "#/components/task-detail-sheet";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -16,6 +20,14 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "#/components/ui/sheet";
 import { Spinner } from "#/components/ui/spinner";
 import { Textarea } from "#/components/ui/textarea";
 import {
@@ -23,6 +35,7 @@ import {
 	getProjectById,
 	updateProject,
 } from "#/lib/project/functions";
+import { listTasksByProject } from "#/lib/task/functions";
 
 export const Route = createFileRoute("/w/$slug/projects/$projectId")({
 	loader: async ({ params }) => {
@@ -35,7 +48,10 @@ export const Route = createFileRoute("/w/$slug/projects/$projectId")({
 				params: { slug: params.slug },
 			});
 		}
-		return { project };
+		const tasks = await listTasksByProject({
+			data: { projectId: params.projectId },
+		});
+		return { project, tasks };
 	},
 	component: ProjectDetailPage,
 });
@@ -50,9 +66,13 @@ const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
 
 function ProjectDetailPage() {
 	const { workspace } = workspaceRoute.useLoaderData();
-	const { project } = Route.useLoaderData();
+	const { project, tasks } = Route.useLoaderData();
 	const navigate = useNavigate();
 
+	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+	const [taskSheetOpen, setTaskSheetOpen] = useState(false);
+
+	// Project settings state
 	const [name, setName] = useState(project.name);
 	const [description, setDescription] = useState(project.description ?? "");
 	const [saving, setSaving] = useState(false);
@@ -66,6 +86,12 @@ function ProjectDetailPage() {
 	const isWsAdmin = wsRole === "owner" || wsRole === "admin";
 	const canEdit = isLead || isWsAdmin;
 	const canDelete = isWsAdmin;
+	const canDeleteTasks = isLead || isWsAdmin;
+
+	function handleTaskClick(task: Task) {
+		setSelectedTask(task);
+		setTaskSheetOpen(true);
+	}
 
 	async function handleSave(e: React.SyntheticEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -107,122 +133,147 @@ function ProjectDetailPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-2xl p-6">
-			<div className="flex items-center gap-3">
-				<h1 className="text-xl font-bold text-foreground">{project.name}</h1>
-				<Badge variant={statusVariant[project.status] ?? "outline"}>
-					{project.status}
-				</Badge>
-			</div>
-			{project.description && (
-				<p className="mt-2 text-sm text-muted-foreground">
-					{project.description}
-				</p>
-			)}
+		<div className="flex h-full flex-col">
+			{/* Header */}
+			<div className="flex items-center justify-between border-b border-border px-6 py-4">
+				<div className="flex items-center gap-3">
+					<h1 className="text-lg font-bold text-foreground">{project.name}</h1>
+					<Badge variant={statusVariant[project.status] ?? "outline"}>
+						{project.status}
+					</Badge>
+				</div>
+				<div className="flex items-center gap-2">
+					<CreateTaskDialog projectId={project.id}>
+						<Button size="sm">
+							<Plus />
+							Add task
+						</Button>
+					</CreateTaskDialog>
+					{canEdit && (
+						<Sheet>
+							<SheetTrigger asChild>
+								<Button variant="outline" size="icon-sm">
+									<Settings className="size-4" />
+								</Button>
+							</SheetTrigger>
+							<SheetContent className="overflow-y-auto sm:max-w-lg">
+								<SheetHeader>
+									<SheetTitle>Project settings</SheetTitle>
+									<SheetDescription>
+										Update project details or delete this project.
+									</SheetDescription>
+								</SheetHeader>
+								<div className="space-y-6 px-4 pb-4">
+									<form onSubmit={handleSave} className="space-y-4">
+										{saveError && (
+											<div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground">
+												{saveError}
+											</div>
+										)}
 
-			{/* Tasks placeholder */}
-			<div className="mt-8 rounded-lg border border-border p-8 text-center text-muted-foreground">
-				Tasks and activity will appear here.
-			</div>
+										<div className="space-y-2">
+											<Label htmlFor="project-name">Project name</Label>
+											<Input
+												id="project-name"
+												value={name}
+												onChange={(e) => setName(e.target.value)}
+											/>
+										</div>
 
-			{/* Project settings */}
-			{canEdit && (
-				<Card className="mt-8">
-					<CardHeader>
-						<CardTitle>Project settings</CardTitle>
-						<CardDescription>
-							Update project name and description.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<form onSubmit={handleSave} className="space-y-4">
-							{saveError && (
-								<div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground">
-									{saveError}
+										<div className="space-y-2">
+											<Label htmlFor="project-desc">Description</Label>
+											<Textarea
+												id="project-desc"
+												value={description}
+												onChange={(e) => setDescription(e.target.value)}
+												rows={3}
+											/>
+										</div>
+
+										<div className="flex items-center gap-2">
+											<Button
+												type="submit"
+												disabled={
+													saving ||
+													(name === project.name &&
+														description === (project.description ?? ""))
+												}
+											>
+												{saving && <Spinner />}
+												{saving ? "Saving..." : "Save changes"}
+											</Button>
+											{saveSuccess && (
+												<span className="text-sm text-muted-foreground">
+													Saved!
+												</span>
+											)}
+										</div>
+									</form>
+
+									{canDelete && (
+										<Card className="border-destructive/30">
+											<CardHeader>
+												<CardTitle className="text-destructive-foreground">
+													Danger zone
+												</CardTitle>
+												<CardDescription>
+													Permanently delete this project and all its data.
+												</CardDescription>
+											</CardHeader>
+											<CardContent>
+												{!confirmDelete ? (
+													<Button
+														variant="destructive"
+														size="sm"
+														onClick={() => setConfirmDelete(true)}
+													>
+														<Trash2 className="size-3.5" />
+														Delete project
+													</Button>
+												) : (
+													<div className="flex items-center gap-2">
+														<Button
+															variant="destructive"
+															size="sm"
+															onClick={handleDelete}
+															disabled={deleting}
+														>
+															{deleting && <Spinner />}
+															{deleting
+																? "Deleting..."
+																: "Yes, delete permanently"}
+														</Button>
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={() => setConfirmDelete(false)}
+														>
+															Cancel
+														</Button>
+													</div>
+												)}
+											</CardContent>
+										</Card>
+									)}
 								</div>
-							)}
+							</SheetContent>
+						</Sheet>
+					)}
+				</div>
+			</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="project-name">Project name</Label>
-								<Input
-									id="project-name"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-								/>
-							</div>
+			{/* Kanban board */}
+			<div className="flex-1 overflow-x-auto p-6">
+				<KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+			</div>
 
-							<div className="space-y-2">
-								<Label htmlFor="project-desc">Description</Label>
-								<Textarea
-									id="project-desc"
-									value={description}
-									onChange={(e) => setDescription(e.target.value)}
-									rows={3}
-								/>
-							</div>
-
-							<div className="flex items-center gap-2">
-								<Button
-									type="submit"
-									disabled={
-										saving ||
-										(name === project.name &&
-											description === (project.description ?? ""))
-									}
-								>
-									{saving && <Spinner />}
-									{saving ? "Saving..." : "Save changes"}
-								</Button>
-								{saveSuccess && (
-									<span className="text-sm text-muted-foreground">Saved!</span>
-								)}
-							</div>
-						</form>
-					</CardContent>
-				</Card>
-			)}
-
-			{/* Danger zone */}
-			{canDelete && (
-				<Card className="mt-6 border-destructive/30">
-					<CardHeader>
-						<CardTitle className="text-destructive-foreground">
-							Danger zone
-						</CardTitle>
-						<CardDescription>
-							Permanently delete this project and all its tasks, comments, and
-							data. This action cannot be undone.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{!confirmDelete ? (
-							<Button
-								variant="destructive"
-								onClick={() => setConfirmDelete(true)}
-							>
-								Delete project
-							</Button>
-						) : (
-							<div className="flex items-center gap-2">
-								<Button
-									variant="destructive"
-									onClick={handleDelete}
-									disabled={deleting}
-								>
-									{deleting && <Spinner />}
-									{deleting ? "Deleting..." : "Yes, delete permanently"}
-								</Button>
-								<Button
-									variant="outline"
-									onClick={() => setConfirmDelete(false)}
-								>
-									Cancel
-								</Button>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			)}
+			{/* Task detail sheet */}
+			<TaskDetailSheet
+				task={selectedTask}
+				open={taskSheetOpen}
+				onOpenChange={setTaskSheetOpen}
+				canDelete={canDeleteTasks}
+			/>
 		</div>
 	);
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loginSchema, signupSchema } from "#/lib/auth/functions";
 import { createProjectSchema } from "#/lib/project/functions";
+import { createTaskSchema } from "#/lib/task/functions";
 import { createWorkspaceSchema } from "#/lib/workspace/functions";
 
 describe("loginSchema", () => {
@@ -265,6 +266,82 @@ describe("createProjectSchema", () => {
 	it("rejects missing workspace ID", () => {
 		const result = createProjectSchema.safeParse({
 			name: "Valid Name",
+		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("createTaskSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid task with title only", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "Fix the login bug",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts task with all optional fields", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "Fix the login bug",
+			description: "Users can't log in on mobile",
+			priority: "high",
+			dueDate: "2026-04-01",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("defaults priority to medium", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "Some task",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.priority).toBe("medium");
+		}
+	});
+
+	it("rejects empty title", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects title over 200 characters", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "A".repeat(201),
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects description over 2000 characters", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "Valid",
+			description: "A".repeat(2001),
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid priority value", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: validUuid,
+			title: "Valid",
+			priority: "critical",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid project ID", () => {
+		const result = createTaskSchema.safeParse({
+			projectId: "not-a-uuid",
+			title: "Valid",
 		});
 		expect(result.success).toBe(false);
 	});

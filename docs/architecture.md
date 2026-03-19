@@ -57,7 +57,7 @@ __root.tsx                    ← bare HTML shell (no header/footer)
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
     ├── w/$slug/settings.tsx  ← /w/:slug/settings
     ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
-    └── w/$slug/projects/$projectId.tsx ← /w/:slug/projects/:id (project detail)
+    └── w/$slug/projects/$projectId.tsx ← /w/:slug/projects/:id (kanban board + settings)
 ```
 
 ### Key Concepts
@@ -160,6 +160,11 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `createProject` | POST | Create project (auto-adds creator as lead) |
 | `updateProject` | POST | Update project name and description |
 | `deleteProject` | POST | Delete project (admin only, enforced by RLS) |
+| `listTasksByProject` | GET | List all tasks in a project |
+| `createTask` | POST | Create task in backlog with auto-positioned ordering |
+| `updateTask` | POST | Update task fields (title, status, priority, etc.) |
+| `deleteTask` | POST | Delete task (lead/admin only, enforced by RLS) |
+| `reorderTasks` | POST | Batch update task status and position (for drag-and-drop) |
 
 ## CI/CD
 
