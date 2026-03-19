@@ -77,14 +77,14 @@ export function CreateWorkspaceDialog({
 
 		const response = await createWorkspace({ data: result.data });
 
-		if (response.error) {
-			setErrors({ form: response.error });
+		if (response.error || !response.slug) {
+			setErrors({ form: response.error ?? "Something went wrong" });
 			setLoading(false);
 			return;
 		}
 
 		setOpen(false);
-		navigate({ to: "/w/$slug", params: { slug: response.slug! } });
+		navigate({ to: "/w/$slug", params: { slug: response.slug } });
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
