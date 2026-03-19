@@ -17,6 +17,8 @@ import { Route as PublicSignupRouteImport } from './routes/_public/signup'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as WSlugIndexRouteImport } from './routes/w/$slug/index'
 import { Route as WSlugSettingsRouteImport } from './routes/w/$slug/settings'
+import { Route as WSlugProjectsIndexRouteImport } from './routes/w/$slug/projects/index'
+import { Route as WSlugProjectsProjectIdRouteImport } from './routes/w/$slug/projects/$projectId'
 
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
@@ -57,6 +59,16 @@ const WSlugSettingsRoute = WSlugSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => WSlugRoute,
 } as any)
+const WSlugProjectsIndexRoute = WSlugProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => WSlugRoute,
+} as any)
+const WSlugProjectsProjectIdRoute = WSlugProjectsProjectIdRouteImport.update({
+  id: '/projects/$projectId',
+  path: '/projects/$projectId',
+  getParentRoute: () => WSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
@@ -66,6 +78,8 @@ export interface FileRoutesByFullPath {
   '/w/$slug': typeof WSlugRouteWithChildren
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug/': typeof WSlugIndexRoute
+  '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
+  '/w/$slug/projects/': typeof WSlugProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof PublicLoginRoute
@@ -74,6 +88,8 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug': typeof WSlugIndexRoute
+  '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
+  '/w/$slug/projects': typeof WSlugProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -85,6 +101,8 @@ export interface FileRoutesById {
   '/_public/': typeof PublicIndexRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug/': typeof WSlugIndexRoute
+  '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
+  '/w/$slug/projects/': typeof WSlugProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,6 +114,8 @@ export interface FileRouteTypes {
     | '/w/$slug'
     | '/w/$slug/settings'
     | '/w/$slug/'
+    | '/w/$slug/projects/$projectId'
+    | '/w/$slug/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -104,6 +124,8 @@ export interface FileRouteTypes {
     | '/'
     | '/w/$slug/settings'
     | '/w/$slug'
+    | '/w/$slug/projects/$projectId'
+    | '/w/$slug/projects'
   id:
     | '__root__'
     | '/_public'
@@ -114,6 +136,8 @@ export interface FileRouteTypes {
     | '/_public/'
     | '/w/$slug/settings'
     | '/w/$slug/'
+    | '/w/$slug/projects/$projectId'
+    | '/w/$slug/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -179,6 +203,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugSettingsRouteImport
       parentRoute: typeof WSlugRoute
     }
+    '/w/$slug/projects/': {
+      id: '/w/$slug/projects/'
+      path: '/projects'
+      fullPath: '/w/$slug/projects/'
+      preLoaderRoute: typeof WSlugProjectsIndexRouteImport
+      parentRoute: typeof WSlugRoute
+    }
+    '/w/$slug/projects/$projectId': {
+      id: '/w/$slug/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/w/$slug/projects/$projectId'
+      preLoaderRoute: typeof WSlugProjectsProjectIdRouteImport
+      parentRoute: typeof WSlugRoute
+    }
   }
 }
 
@@ -202,11 +240,15 @@ const PublicRouteWithChildren =
 interface WSlugRouteChildren {
   WSlugSettingsRoute: typeof WSlugSettingsRoute
   WSlugIndexRoute: typeof WSlugIndexRoute
+  WSlugProjectsProjectIdRoute: typeof WSlugProjectsProjectIdRoute
+  WSlugProjectsIndexRoute: typeof WSlugProjectsIndexRoute
 }
 
 const WSlugRouteChildren: WSlugRouteChildren = {
   WSlugSettingsRoute: WSlugSettingsRoute,
   WSlugIndexRoute: WSlugIndexRoute,
+  WSlugProjectsProjectIdRoute: WSlugProjectsProjectIdRoute,
+  WSlugProjectsIndexRoute: WSlugProjectsIndexRoute,
 }
 
 const WSlugRouteWithChildren = WSlugRoute._addFileChildren(WSlugRouteChildren)

@@ -80,7 +80,27 @@ RLS doesn't always throw errors. It depends on the operation:
 - **UPDATE/DELETE** — silently affects 0 rows (no error)
 - **INSERT** — throws `new row violates row-level security policy` error
 
-That's why UPDATE/DELETE tests check that data is **unchanged** rather than catching errors. For INSERT denials, you'd need exception handling (which is tricky in pgTAP — often easier to just test that the row doesn't exist after).
+That's why UPDATE/DELETE tests check that data is **unchanged** rather than catching errors. For INSERT denials, use `throws_ok()`:
+
+```sql
+-- Test that an INSERT is denied by RLS
+SELECT tests.authenticate_as('outsider');
+SELECT throws_ok(
+  format(
+    'INSERT INTO projects (name, workspace_id, created_by) VALUES (%L, %L, %L)',
+    'Hacked Project',
+    some_workspace_id,
+    tests.get_user_id('outsider')
+  ),
+  '42501',    -- insufficient_privilege error code
+  NULL,       -- any error message
+  'INSERT: outsider cannot create a project'
+);
+SELECT tests.clear_authentication();
+RESET ROLE;
+```
+
+`throws_ok()` runs the SQL string internally and catches the error without aborting the test transaction. Error code `42501` is `insufficient_privilege` (the RLS violation).
 
 ## The `(SELECT auth.uid())` Pattern
 

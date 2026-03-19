@@ -55,7 +55,9 @@ __root.tsx                    ← bare HTML shell (no header/footer)
 │   └── _public/workspaces.tsx ← /workspaces (workspace list)
 └── w/$slug.tsx               ← workspace layout: shadcn sidebar
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
-    └── w/$slug/settings.tsx  ← /w/:slug/settings
+    ├── w/$slug/settings.tsx  ← /w/:slug/settings
+    ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
+    └── w/$slug/projects/$projectId.tsx ← /w/:slug/projects/:id (project detail)
 ```
 
 ### Key Concepts
@@ -128,6 +130,7 @@ These helpers are `SECURITY DEFINER` with `search_path = ''` to prevent search_p
 |---|---|---|
 | `on_auth_user_created` | `auth.users` | Creates a `profiles` row with `display_name` from user metadata |
 | `on_workspace_created` | `workspaces` | Creates a `workspace_members` row with `owner` role for the creator |
+| `on_project_created` | `projects` | Creates a `project_members` row with `lead` role for the creator |
 
 ## Auth Flow
 
@@ -152,6 +155,11 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `createWorkspace` | POST | Create workspace (auto-adds creator as owner) |
 | `updateWorkspace` | POST | Update workspace name |
 | `deleteWorkspace` | POST | Delete workspace (owner only, enforced by RLS) |
+| `listProjects` | GET | List projects in a workspace |
+| `getProjectById` | GET | Get project by ID (with user's role) |
+| `createProject` | POST | Create project (auto-adds creator as lead) |
+| `updateProject` | POST | Update project name and description |
+| `deleteProject` | POST | Delete project (admin only, enforced by RLS) |
 
 ## CI/CD
 

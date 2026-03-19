@@ -7,12 +7,15 @@ import {
 } from "@tanstack/react-router";
 import {
 	ChevronsUpDown,
+	Folder,
 	Home,
 	Layers,
 	LogOut,
+	Plus,
 	Settings,
 	Users,
 } from "lucide-react";
+import { CreateProjectDialog } from "#/components/create-project-dialog";
 import ThemeToggle from "#/components/theme-toggle";
 import { Button } from "#/components/ui/button";
 import {
@@ -41,6 +44,7 @@ import {
 } from "#/components/ui/sidebar";
 import UserAvatar from "#/components/user-avatar";
 import { getUser, getUserProfile, logout } from "#/lib/auth/functions";
+import { listProjects } from "#/lib/project/functions";
 import { getWorkspaceBySlug } from "#/lib/workspace/functions";
 
 export const Route = createFileRoute("/w/$slug")({
@@ -59,7 +63,10 @@ export const Route = createFileRoute("/w/$slug")({
 		if (!workspace) {
 			throw redirect({ to: "/workspaces" });
 		}
-		return { workspace, profile };
+		const projects = await listProjects({
+			data: { workspaceId: workspace.id },
+		});
+		return { workspace, profile, projects };
 	},
 	component: WorkspaceLayout,
 });
@@ -72,7 +79,7 @@ const navItems = [
 ];
 
 function WorkspaceLayout() {
-	const { workspace, profile } = Route.useLoaderData();
+	const { workspace, profile, projects } = Route.useLoaderData();
 	const location = useLocation();
 
 	async function handleLogout() {
@@ -139,6 +146,48 @@ function WorkspaceLayout() {
 										</SidebarMenuItem>
 									);
 								})}
+							</SidebarMenu>
+						</SidebarGroupContent>
+					</SidebarGroup>
+
+					<SidebarGroup>
+						<SidebarGroupLabel>Projects</SidebarGroupLabel>
+						<SidebarGroupContent>
+							<SidebarMenu>
+								{projects.map((project) => {
+									const isActive = location.pathname.includes(
+										`/w/${workspace.slug}/projects/${project.id}`,
+									);
+
+									return (
+										<SidebarMenuItem key={project.id}>
+											<Link
+												to="/w/$slug/projects/$projectId"
+												params={{
+													slug: workspace.slug,
+													projectId: project.id,
+												}}
+												className="no-underline"
+											>
+												<SidebarMenuButton
+													isActive={isActive}
+													tooltip={project.name}
+												>
+													<Folder />
+													<span>{project.name}</span>
+												</SidebarMenuButton>
+											</Link>
+										</SidebarMenuItem>
+									);
+								})}
+								<SidebarMenuItem>
+									<CreateProjectDialog workspaceId={workspace.id}>
+										<SidebarMenuButton className="text-sidebar-foreground/60">
+											<Plus />
+											<span>New project</span>
+										</SidebarMenuButton>
+									</CreateProjectDialog>
+								</SidebarMenuItem>
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>
