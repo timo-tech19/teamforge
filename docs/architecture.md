@@ -158,9 +158,9 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 ### CI (Pull Requests)
 
 Runs on every PR to `main`:
-1. **Biome check** — linting + formatting
-2. **TypeScript type check** — `tsc --noEmit`
-3. **Migration validation** — starts local Supabase and verifies migrations apply cleanly
+1. **Lint & Type Check** — Biome check + `tsc --noEmit`
+2. **Unit Tests** — Vitest unit tests (schemas, validators)
+3. **Database Tests** — starts local Supabase, verifies migrations, runs pgTAP tests
 
 ### CD (Merge to Main)
 

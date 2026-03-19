@@ -26,7 +26,7 @@ main (protected)
 
 `main` has these protections:
 - PRs required (no direct pushes)
-- Status checks must pass: "Lint & Type Check", "Test Migrations"
+- Status checks must pass: "Lint & Type Check", "Unit Tests", "Database Tests"
 
 ## Commit Messages
 
