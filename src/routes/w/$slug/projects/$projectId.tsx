@@ -271,6 +271,7 @@ function ProjectDetailPage() {
 			{/* Task detail sheet */}
 			<TaskDetailSheet
 				task={selectedTask}
+				projectId={project.id}
 				open={taskSheetOpen}
 				onOpenChange={setTaskSheetOpen}
 				canDelete={canDeleteTasks}
