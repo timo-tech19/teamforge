@@ -1,10 +1,12 @@
 import { useRouter } from "@tanstack/react-router";
-import { Calendar, Flag, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Calendar, Flag, MessageSquare, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CommentList } from "#/components/comment-list";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { Separator } from "#/components/ui/separator";
 import {
 	Sheet,
 	SheetContent,
@@ -14,6 +16,7 @@ import {
 } from "#/components/ui/sheet";
 import { Spinner } from "#/components/ui/spinner";
 import { Textarea } from "#/components/ui/textarea";
+import { listCommentsByTask } from "#/lib/comment/functions";
 import { deleteTask, updateTask } from "#/lib/task/functions";
 
 type Task = {
@@ -24,6 +27,16 @@ type Task = {
 	priority: string;
 	dueDate: string | null;
 	assignedTo: string | null;
+};
+
+type Comment = {
+	id: string;
+	body: string;
+	editedAt: string | null;
+	createdAt: string;
+	authorId: string;
+	authorName: string;
+	authorAvatar: string | null;
 };
 
 const priorityColors: Record<
@@ -49,16 +62,50 @@ export function TaskDetailSheet({
 	open,
 	onOpenChange,
 	canDelete,
+	currentUserId,
+	canModerateComments,
 }: {
 	task: Task | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	canDelete: boolean;
+	currentUserId: string;
+	canModerateComments: boolean;
 }) {
 	const router = useRouter();
 	const [saving, setSaving] = useState(false);
 	const [deleting, setDeleting] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [comments, setComments] = useState<Comment[]>([]);
+	const [loadingComments, setLoadingComments] = useState(false);
+
+	// Fetch comments when task changes or sheet opens
+	useEffect(() => {
+		if (!task || !open) {
+			setComments([]);
+			return;
+		}
+
+		let cancelled = false;
+		setLoadingComments(true);
+
+		listCommentsByTask({ data: { taskId: task.id } })
+			.then((result) => {
+				if (!cancelled) {
+					setComments(result);
+					setLoadingComments(false);
+				}
+			})
+			.catch(() => {
+				if (!cancelled) {
+					setLoadingComments(false);
+				}
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [task, open]);
 
 	if (!task) return null;
 
@@ -107,6 +154,12 @@ export function TaskDetailSheet({
 			setConfirmDelete(false);
 			await router.invalidate();
 		}
+	}
+
+	// Refetch comments after adding/editing/deleting
+	async function refreshComments() {
+		const result = await listCommentsByTask({ data: { taskId } });
+		setComments(result);
 	}
 
 	return (
@@ -198,6 +251,33 @@ export function TaskDetailSheet({
 						</Button>
 					</div>
 				</form>
+
+				{/* Comments section */}
+				<div className="px-4 pb-4">
+					<Separator className="mb-4" />
+					<h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
+						<MessageSquare className="size-4" />
+						Comments
+						{comments.length > 0 && (
+							<span className="text-xs text-muted-foreground">
+								({comments.length})
+							</span>
+						)}
+					</h3>
+					{loadingComments ? (
+						<div className="flex items-center justify-center py-4">
+							<Spinner />
+						</div>
+					) : (
+						<CommentList
+							taskId={taskId}
+							comments={comments}
+							currentUserId={currentUserId}
+							canModerate={canModerateComments}
+							onCommentChange={refreshComments}
+						/>
+					)}
+				</div>
 
 				{canDelete && (
 					<div className="border-t border-border px-4 py-4">

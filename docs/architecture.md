@@ -165,6 +165,10 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `updateTask` | POST | Update task fields (title, status, priority, etc.) |
 | `deleteTask` | POST | Delete task (lead/admin only, enforced by RLS) |
 | `reorderTasks` | POST | Batch update task status and position (for drag-and-drop) |
+| `listCommentsByTask` | GET | List comments on a task with author profiles |
+| `createComment` | POST | Add comment to a task (author_id enforced by RLS) |
+| `updateComment` | POST | Edit own comment (author-only, enforced by RLS) |
+| `deleteComment` | POST | Delete comment (author, lead, or admin) |
 
 ## CI/CD
 
