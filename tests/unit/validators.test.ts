@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loginSchema, signupSchema } from "#/lib/auth/functions";
+import { createCommentSchema } from "#/lib/comment/functions";
 import { createProjectSchema } from "#/lib/project/functions";
 import { createTaskSchema } from "#/lib/task/functions";
 import { createWorkspaceSchema } from "#/lib/workspace/functions";
@@ -342,6 +343,49 @@ describe("createTaskSchema", () => {
 		const result = createTaskSchema.safeParse({
 			projectId: "not-a-uuid",
 			title: "Valid",
+		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("createCommentSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid comment", () => {
+		const result = createCommentSchema.safeParse({
+			taskId: validUuid,
+			body: "This looks good!",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects empty body", () => {
+		const result = createCommentSchema.safeParse({
+			taskId: validUuid,
+			body: "",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects body over 5000 characters", () => {
+		const result = createCommentSchema.safeParse({
+			taskId: validUuid,
+			body: "A".repeat(5001),
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid task ID", () => {
+		const result = createCommentSchema.safeParse({
+			taskId: "not-a-uuid",
+			body: "Valid comment",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects missing task ID", () => {
+		const result = createCommentSchema.safeParse({
+			body: "Valid comment",
 		});
 		expect(result.success).toBe(false);
 	});

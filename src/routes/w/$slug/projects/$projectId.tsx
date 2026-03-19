@@ -66,6 +66,7 @@ const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
 
 function ProjectDetailPage() {
 	const { workspace } = workspaceRoute.useLoaderData();
+	const { user } = Route.useRouteContext();
 	const { project, tasks } = Route.useLoaderData();
 	const navigate = useNavigate();
 
@@ -273,6 +274,8 @@ function ProjectDetailPage() {
 				open={taskSheetOpen}
 				onOpenChange={setTaskSheetOpen}
 				canDelete={canDeleteTasks}
+				currentUserId={user.id}
+				canModerateComments={canDeleteTasks}
 			/>
 		</div>
 	);
