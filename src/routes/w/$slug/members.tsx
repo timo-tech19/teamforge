@@ -108,7 +108,7 @@ function MembersPage() {
 					</p>
 				</div>
 				{isAdmin && (
-					<InviteMemberDialog workspaceId={workspace.id}>
+					<InviteMemberDialog workspaceId={workspace.id} isOwner={isOwner}>
 						<Button>
 							<UserPlus />
 							Invite member

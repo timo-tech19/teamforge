@@ -100,10 +100,12 @@ function ProjectDetailPage() {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	const isLead = project.role === "lead";
+	const isProjectViewer = project.role === "viewer";
 	const wsRole = workspace.role;
 	const isWsAdmin = wsRole === "owner" || wsRole === "admin";
 	const canEdit = isLead || isWsAdmin;
 	const canDelete = isWsAdmin;
+	const canCreateTasks = !isProjectViewer || isWsAdmin;
 	const canDeleteTasks = isLead || isWsAdmin;
 	const canManageMembers = isLead || isWsAdmin;
 	const [memberLoading, setMemberLoading] = useState<string | null>(null);
@@ -185,12 +187,14 @@ function ProjectDetailPage() {
 					</Badge>
 				</div>
 				<div className="flex items-center gap-2">
-					<CreateTaskDialog projectId={project.id}>
-						<Button size="sm">
-							<Plus />
-							Add task
-						</Button>
-					</CreateTaskDialog>
+					{canCreateTasks && (
+						<CreateTaskDialog projectId={project.id}>
+							<Button size="sm">
+								<Plus />
+								Add task
+							</Button>
+						</CreateTaskDialog>
+					)}
 					{canEdit && (
 						<Sheet>
 							<SheetTrigger asChild>

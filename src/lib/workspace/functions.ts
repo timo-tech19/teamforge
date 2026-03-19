@@ -22,6 +22,11 @@ export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 export const listWorkspaces = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const supabase = getSupabaseServerClient();
+
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+
 		const { data, error } = await supabase
 			.from("workspaces")
 			.select(
@@ -36,6 +41,7 @@ export const listWorkspaces = createServerFn({ method: "GET" }).handler(
 				)
 			`,
 			)
+			.eq("workspace_members.user_id", user?.id ?? "")
 			.eq("workspace_members.status", "active")
 			.order("created_at", { ascending: false });
 
@@ -58,6 +64,14 @@ export const getWorkspaceBySlug = createServerFn({ method: "GET" })
 	.inputValidator(z.object({ slug: z.string() }))
 	.handler(async ({ data }) => {
 		const supabase = getSupabaseServerClient();
+
+		// Get the current user's ID so we can filter the membership join
+		// to only their row. Without this, workspace_members returns ALL
+		// members visible to the user, and [0] could be anyone's role.
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+
 		const { data: workspace, error } = await supabase
 			.from("workspaces")
 			.select(
@@ -74,6 +88,7 @@ export const getWorkspaceBySlug = createServerFn({ method: "GET" })
 			`,
 			)
 			.eq("slug", data.slug)
+			.eq("workspace_members.user_id", user?.id ?? "")
 			.single();
 
 		if (error) {

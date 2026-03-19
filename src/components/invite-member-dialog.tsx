@@ -22,9 +22,11 @@ import {
 export function InviteMemberDialog({
 	children,
 	workspaceId,
+	isOwner,
 }: {
 	children: React.ReactNode;
 	workspaceId: string;
+	isOwner: boolean;
 }) {
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
@@ -120,7 +122,7 @@ export function InviteMemberDialog({
 						>
 							<option value="viewer">Viewer</option>
 							<option value="member">Member</option>
-							<option value="admin">Admin</option>
+							{isOwner && <option value="admin">Admin</option>}
 						</select>
 					</div>
 
