@@ -24,8 +24,24 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
-  test-migrations:
-    name: Test Migrations
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run unit tests
+        run: npx vitest run tests/unit/
+
+  database-tests:
+    name: Database Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,3 +55,6 @@ jobs:
 
       - name: Verify migrations applied
         run: supabase migration list --local
+
+      - name: Run pgTAP tests
+        run: supabase test db
