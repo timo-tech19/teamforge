@@ -1,11 +1,11 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { CreateWorkspaceDialog } from "#/components/create-workspace-dialog";
 import { Button } from "#/components/ui/button";
-import { getUser, logout } from "#/lib/auth/functions";
+import { getUser } from "#/lib/auth/functions";
 import { listWorkspaces } from "#/lib/workspace/functions";
 
-export const Route = createFileRoute("/workspaces")({
+export const Route = createFileRoute("/_public/workspaces")({
 	beforeLoad: async () => {
 		const user = await getUser();
 		if (!user) {
@@ -21,34 +21,18 @@ export const Route = createFileRoute("/workspaces")({
 });
 
 function WorkspacesPage() {
-	const { user } = Route.useRouteContext();
 	const { workspaces } = Route.useLoaderData();
-
-	async function handleLogout() {
-		await logout();
-		window.location.href = "/";
-	}
 
 	return (
 		<main className="mx-auto max-w-3xl px-4 py-8">
 			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-bold text-foreground">Workspaces</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Signed in as {user.email}
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<CreateWorkspaceDialog>
-						<Button>
-							<Plus />
-							New workspace
-						</Button>
-					</CreateWorkspaceDialog>
-					<Button variant="outline" onClick={handleLogout}>
-						Sign out
+				<h1 className="text-2xl font-bold text-foreground">Workspaces</h1>
+				<CreateWorkspaceDialog>
+					<Button>
+						<Plus />
+						New workspace
 					</Button>
-				</div>
+				</CreateWorkspaceDialog>
 			</div>
 
 			{workspaces.length === 0 ? (
@@ -75,19 +59,22 @@ function WorkspacesPage() {
 							key={workspace.id}
 							to="/w/$slug"
 							params={{ slug: workspace.slug }}
-							className="flex items-center justify-between rounded-lg border border-border p-4 no-underline transition hover:bg-accent"
+							className="group flex items-center gap-4 rounded-lg border border-border p-4 no-underline transition hover:bg-accent"
 						>
-							<div>
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+								<span className="text-sm font-semibold">
+									{workspace.name.charAt(0).toUpperCase()}
+								</span>
+							</div>
+							<div className="flex-1">
 								<h2 className="font-semibold text-foreground">
 									{workspace.name}
 								</h2>
-								<p className="mt-0.5 text-sm text-muted-foreground">
-									/w/{workspace.slug}
-								</p>
+								<span className="text-xs text-muted-foreground">
+									{workspace.role}
+								</span>
 							</div>
-							<span className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
-								{workspace.role}
-							</span>
+							<ArrowRight className="size-4 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
 						</Link>
 					))}
 				</div>

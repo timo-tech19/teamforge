@@ -3,6 +3,7 @@ import {
 	Link,
 	redirect,
 	useNavigate,
+	useRouter,
 } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "#/components/ui/button";
@@ -23,7 +24,7 @@ import {
 	loginWithEmail,
 } from "#/lib/auth/functions";
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/_public/login")({
 	beforeLoad: async () => {
 		const user = await getUser();
 		if (user) {
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
 	const navigate = useNavigate();
+	const router = useRouter();
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [loading, setLoading] = useState(false);
 
@@ -69,6 +71,7 @@ function LoginPage() {
 			return;
 		}
 
+		await router.invalidate();
 		navigate({ to: "/workspaces" });
 	}
 

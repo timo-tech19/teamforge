@@ -30,6 +30,32 @@ export const getUser = createServerFn({ method: "GET" }).handler(async () => {
 	return user;
 });
 
+export const getUserProfile = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const supabase = getSupabaseServerClient();
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+
+		if (!user) return null;
+
+		const { data: profile } = await supabase
+			.from("profiles")
+			.select("display_name, avatar_url")
+			.eq("id", user.id)
+			.single();
+
+		if (!profile) return null;
+
+		return {
+			id: user.id,
+			email: user.email ?? "",
+			displayName: profile.display_name,
+			avatarUrl: profile.avatar_url,
+		};
+	},
+);
+
 export const loginWithEmail = createServerFn({ method: "POST" })
 	.inputValidator(loginSchema)
 	.handler(async ({ data }) => {

@@ -77,14 +77,14 @@ export function CreateWorkspaceDialog({
 
 		const response = await createWorkspace({ data: result.data });
 
-		if (response.error) {
-			setErrors({ form: response.error });
+		if (response.error || !response.slug) {
+			setErrors({ form: response.error ?? "Something went wrong" });
 			setLoading(false);
 			return;
 		}
 
 		setOpen(false);
-		navigate({ to: "/w/$slug", params: { slug: response.slug! } });
+		navigate({ to: "/w/$slug", params: { slug: response.slug } });
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
@@ -133,7 +133,7 @@ export function CreateWorkspaceDialog({
 					<div className="space-y-2">
 						<Label htmlFor="ws-slug">URL slug</Label>
 						<div className="flex items-center gap-0">
-							<span className="flex h-9 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+							<span className="flex h-9 shrink-0 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
 								/w/
 							</span>
 							<Input
