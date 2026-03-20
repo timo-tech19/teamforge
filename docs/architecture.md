@@ -200,6 +200,26 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `listActivityByWorkspace` | GET | Cursor-paginated workspace activity feed (20 items/page) |
 | `searchWorkspace` | GET | Search projects, tasks, and members across a workspace (5 results per category) |
 | `listMyTasks` | GET | All tasks assigned to current user across all projects in workspace |
+| `listUpcomingTasks` | GET | User's top 5 assigned tasks with due dates (for dashboard) |
+| `listRecentActivity` | GET | Last 10 activity log entries (for dashboard) |
+
+## Edge Functions
+
+| Function | Invocation | Auth | Purpose |
+|---|---|---|---|
+| `workspace-stats` | Client (`supabase.functions.invoke`) | User JWT (RLS applies) | Aggregated workspace stats (projects, tasks, members) |
+
+Edge Functions live in `supabase/functions/<name>/index.ts` and run on the Deno runtime. The `workspace-stats` function demonstrates client invocation — the user's JWT is forwarded automatically via `supabase.functions.invoke()`, so all queries respect RLS. Admins see workspace-wide stats; regular members see only their own.
+
+## Dashboard
+
+The workspace dashboard (`/w/:slug`) shows:
+
+- **Stats cards** — from Edge Function: active projects, open tasks, tasks due this week, member count (admin only)
+- **Upcoming tasks** — user's next 5 tasks with due dates, linked to task detail via `?task=` param
+- **Recent activity** — last 10 activity log entries with actor avatars and relative timestamps
+
+Role gating: admins see workspace-wide counts; regular members see personal stats only. The `totalMembers` card is hidden for non-admins.
 
 ## Command Palette
 
@@ -295,3 +315,4 @@ Runs on every PR to `main`:
 
 Runs on push to `main`:
 1. **Deploy migrations** — links to production Supabase project and runs `supabase db push`
+2. **Deploy Edge Functions** — deploys all functions in `supabase/functions/` via `supabase functions deploy`
