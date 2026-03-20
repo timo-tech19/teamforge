@@ -7,6 +7,7 @@ import { addProjectMemberSchema } from "#/lib/project-member/functions";
 import { createProjectSchema } from "#/lib/project/functions";
 import { searchWorkspaceSchema } from "#/lib/search/functions";
 import { createTaskSchema } from "#/lib/task/functions";
+import { listMyTasksSchema } from "#/lib/task/my-tasks";
 import { createWorkspaceSchema } from "#/lib/workspace/functions";
 
 describe("loginSchema", () => {
@@ -579,6 +580,29 @@ describe("searchWorkspaceSchema", () => {
 		const result = searchWorkspaceSchema.safeParse({
 			workspaceId: validUuid,
 		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("listMyTasksSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid workspaceId", () => {
+		const result = listMyTasksSchema.safeParse({
+			workspaceId: validUuid,
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects invalid workspaceId", () => {
+		const result = listMyTasksSchema.safeParse({
+			workspaceId: "not-a-uuid",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects missing workspaceId", () => {
+		const result = listMyTasksSchema.safeParse({});
 		expect(result.success).toBe(false);
 	});
 });

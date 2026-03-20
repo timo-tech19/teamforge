@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import {
 	Activity,
+	CheckSquare,
 	ChevronsUpDown,
 	Command,
 	Folder,
@@ -107,6 +108,12 @@ function WorkspaceLayout() {
 
 	const navItems = [
 		{ label: "Dashboard", icon: Home, to: ".", segment: "" },
+		{
+			label: "My Tasks",
+			icon: CheckSquare,
+			to: "./my-tasks",
+			segment: "my-tasks",
+		},
 		{
 			label: "Activity",
 			icon: Activity,

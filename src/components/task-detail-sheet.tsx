@@ -1,5 +1,12 @@
 import { useRouter } from "@tanstack/react-router";
-import { Calendar, Flag, MessageSquare, Paperclip, Trash2 } from "lucide-react";
+import {
+	Calendar,
+	Flag,
+	MessageSquare,
+	Paperclip,
+	Trash2,
+	UserCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { AttachmentList } from "#/components/attachment-list";
 import { CommentList } from "#/components/comment-list";
@@ -59,6 +66,12 @@ const statusLabels: Record<string, string> = {
 	done: "Done",
 };
 
+type ProjectMember = {
+	userId: string;
+	displayName: string;
+	avatarUrl: string | null;
+};
+
 export function TaskDetailSheet({
 	task,
 	projectId,
@@ -67,6 +80,7 @@ export function TaskDetailSheet({
 	canDelete,
 	currentUserId,
 	canModerateComments,
+	projectMembers,
 }: {
 	task: Task | null;
 	projectId: string;
@@ -75,6 +89,7 @@ export function TaskDetailSheet({
 	canDelete: boolean;
 	currentUserId: string;
 	canModerateComments: boolean;
+	projectMembers: ProjectMember[];
 }) {
 	const router = useRouter();
 	const [saving, setSaving] = useState(false);
@@ -145,6 +160,7 @@ export function TaskDetailSheet({
 					| "high"
 					| "urgent",
 				dueDate: (formData.get("dueDate") as string) || null,
+				assignedTo: (formData.get("assignedTo") as string) || null,
 			},
 		});
 
@@ -258,6 +274,26 @@ export function TaskDetailSheet({
 							type="date"
 							defaultValue={task.dueDate ?? ""}
 						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="edit-assigned-to">
+							<UserCircle className="mr-1 inline size-3.5" />
+							Assignee
+						</Label>
+						<select
+							id="edit-assigned-to"
+							name="assignedTo"
+							defaultValue={task.assignedTo ?? ""}
+							className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+						>
+							<option value="">Unassigned</option>
+							{projectMembers.map((member) => (
+								<option key={member.userId} value={member.userId}>
+									{member.displayName}
+								</option>
+							))}
+						</select>
 					</div>
 
 					<div className="flex items-center gap-2 pt-2">

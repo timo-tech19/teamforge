@@ -491,6 +491,7 @@ function ProjectDetailPage() {
 				canDelete={canDeleteTasks}
 				currentUserId={user.id}
 				canModerateComments={canDeleteTasks}
+				projectMembers={projectMembers}
 			/>
 		</div>
 	);

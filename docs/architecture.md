@@ -56,6 +56,7 @@ __root.tsx                    ← bare HTML shell (no header/footer)
 │   └── _public/workspaces.tsx ← /workspaces (workspace list)
 └── w/$slug.tsx               ← workspace layout: shadcn sidebar
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
+    ├── w/$slug/my-tasks.tsx  ← /w/:slug/my-tasks (cross-project task list for current user)
     ├── w/$slug/activity.tsx  ← /w/:slug/activity (activity feed, cursor-paginated)
     ├── w/$slug/settings.tsx  ← /w/:slug/settings
     ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
@@ -198,6 +199,7 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `removeProjectMember` | POST | Remove from project (lead/admin or self) |
 | `listActivityByWorkspace` | GET | Cursor-paginated workspace activity feed (20 items/page) |
 | `searchWorkspace` | GET | Search projects, tasks, and members across a workspace (5 results per category) |
+| `listMyTasks` | GET | All tasks assigned to current user across all projects in workspace |
 
 ## Command Palette
 
