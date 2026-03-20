@@ -439,7 +439,13 @@ function ProjectDetailPage() {
 
 			{/* Kanban board */}
 			<div className="flex-1 overflow-x-auto p-6">
-				<KanbanBoard tasks={tasks} onTaskClick={handleTaskClick} />
+				<KanbanBoard
+					tasks={tasks}
+					projectId={project.id}
+					currentUserId={user.id}
+					onTaskClick={handleTaskClick}
+					onReconnect={() => router.invalidate()}
+				/>
 			</div>
 
 			{/* Task detail sheet */}

@@ -187,6 +187,32 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `updateProjectMemberRole` | POST | Change project member role |
 | `removeProjectMember` | POST | Remove from project (lead/admin or self) |
 
+## Realtime
+
+### Overview
+
+Supabase Realtime is used to push live updates to connected clients. The `tasks` table is added to the `supabase_realtime` publication so the Realtime server broadcasts INSERT/UPDATE/DELETE events via Postgres WAL (Change Data Capture). RLS is enforced per-event — clients only receive rows they can access.
+
+### Channels
+
+| Channel | Type | Purpose |
+|---|---|---|
+| `project:${projectId}` | `postgres_changes` | Live task updates on the kanban board |
+
+### Hook: `useRealtimeTasks`
+
+Located in `src/hooks/use-realtime-tasks.ts`. Subscribes to task changes filtered by `project_id`.
+
+**Key behaviors:**
+- **Fetch-on-reconnect:** Calls `onReconnect` on every `SUBSCRIBED` status (initial + reconnection) to fill gaps from missed events
+- **Skip own inserts:** Ignores INSERT events where `created_by` matches the current user (board already shows these via `router.invalidate()`)
+- **Drag-safe:** Updates are deferred while a drag is in progress and flushed after the drag ends, preventing conflicts with optimistic UI
+- **Stable subscription:** Callbacks stored in refs so the channel isn't recreated on every render
+
+### Integration
+
+The `KanbanBoard` component uses the hook directly (it owns the `columns` state). The project detail page passes `projectId`, `currentUserId`, and an `onReconnect` callback (`router.invalidate()`).
+
 ## CI/CD
 
 ### CI (Pull Requests)
