@@ -6,6 +6,7 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import {
+	Activity,
 	ChevronsUpDown,
 	Folder,
 	Home,
@@ -15,6 +16,7 @@ import {
 	Settings,
 	Users,
 } from "lucide-react";
+import { toast } from "sonner";
 import { CreateProjectDialog } from "#/components/create-project-dialog";
 import ThemeToggle from "#/components/theme-toggle";
 import { Button } from "#/components/ui/button";
@@ -43,6 +45,7 @@ import {
 	SidebarTrigger,
 } from "#/components/ui/sidebar";
 import UserAvatar from "#/components/user-avatar";
+import { useWorkspacePresence } from "#/hooks/use-workspace-presence";
 import { getUser, getUserProfile, logout } from "#/lib/auth/functions";
 import { listProjects } from "#/lib/project/functions";
 import { getWorkspaceBySlug } from "#/lib/workspace/functions";
@@ -72,12 +75,28 @@ export const Route = createFileRoute("/w/$slug")({
 });
 
 function WorkspaceLayout() {
+	const { user } = Route.useRouteContext();
 	const { workspace, profile, projects } = Route.useLoaderData();
 
 	const isAdmin = workspace.role === "owner" || workspace.role === "admin";
 
+	const { onlineUsers } = useWorkspacePresence({
+		workspaceId: workspace.id,
+		currentUserId: user.id,
+		displayName: profile?.displayName ?? "User",
+		avatarUrl: profile?.avatarUrl ?? null,
+		onJoin: (u) => toast.info(`${u.displayName} is now online`),
+		onLeave: (u) => toast(`${u.displayName} went offline`),
+	});
+
 	const navItems = [
 		{ label: "Dashboard", icon: Home, to: ".", segment: "" },
+		{
+			label: "Activity",
+			icon: Activity,
+			to: "./activity",
+			segment: "activity",
+		},
 		{ label: "Projects", icon: Layers, to: "./projects", segment: "projects" },
 		{ label: "Members", icon: Users, to: "./members", segment: "members" },
 		...(isAdmin
@@ -202,6 +221,33 @@ function WorkspaceLayout() {
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>
+
+					{onlineUsers.length > 0 && (
+						<SidebarGroup>
+							<SidebarGroupLabel>
+								Online ({onlineUsers.length})
+							</SidebarGroupLabel>
+							<SidebarGroupContent>
+								<SidebarMenu>
+									{onlineUsers.map((u) => (
+										<SidebarMenuItem key={u.userId}>
+											<SidebarMenuButton className="pointer-events-none">
+												<div className="relative">
+													<UserAvatar
+														displayName={u.displayName}
+														avatarUrl={u.avatarUrl}
+														size="sm"
+													/>
+													<span className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-sidebar bg-emerald-500" />
+												</div>
+												<span>{u.displayName}</span>
+											</SidebarMenuButton>
+										</SidebarMenuItem>
+									))}
+								</SidebarMenu>
+							</SidebarGroupContent>
+						</SidebarGroup>
+					)}
 				</SidebarContent>
 
 				<SidebarFooter>

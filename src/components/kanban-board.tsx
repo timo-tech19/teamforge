@@ -25,7 +25,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Flag, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "#/components/ui/badge";
+import { useRealtimeTasks } from "#/hooks/use-realtime-tasks";
 import { reorderTasks } from "#/lib/task/functions";
 
 type TaskStatus = "backlog" | "todo" | "in_progress" | "in_review" | "done";
@@ -54,6 +56,7 @@ const COLUMNS: Column[] = [
 ];
 
 const COLUMN_IDS = new Set(COLUMNS.map((c) => c.id));
+const COLUMN_LABELS = Object.fromEntries(COLUMNS.map((c) => [c.id, c.label]));
 
 const priorityColors: Record<
 	string,
@@ -272,10 +275,17 @@ const measuring = {
 
 export function KanbanBoard({
 	tasks: initialTasks,
+	projectId,
+	currentUserId,
 	onTaskClick,
+	onReconnect,
 }: {
 	tasks: Task[];
+	projectId: string;
+	currentUserId: string;
 	onTaskClick: (task: Task) => void;
+	/** Called on Realtime (re)connection to refetch tasks. */
+	onReconnect: () => void;
 }) {
 	const [columns, setColumns] = useState(() => groupByStatus(initialTasks));
 	const [clonedColumns, setClonedColumns] = useState<Record<
@@ -294,6 +304,11 @@ export function KanbanBoard({
 	const lastOverId = useRef<UniqueIdentifier | null>(null);
 	const recentlyMovedToNewContainer = useRef(false);
 
+	// Track whether a drag is in progress — realtime updates are
+	// deferred until the drag ends to avoid fighting the user's hand.
+	const isDragging = useRef(false);
+	const pendingUpdates = useRef<(() => void)[]>([]);
+
 	useEffect(() => {
 		setMounted(true);
 	}, []);
@@ -310,6 +325,98 @@ export function KanbanBoard({
 	useEffect(() => {
 		setColumns(groupByStatus(initialTasks));
 	}, [tasksKey]);
+
+	// ── Realtime subscription ─────────────────────────────────────────
+	// Merges remote changes from other users into the local columns state.
+	// Updates are deferred while a drag is in progress.
+
+	useRealtimeTasks({
+		projectId,
+		currentUserId,
+		onInsert: (task) => {
+			const apply = () => {
+				setColumns((prev) => {
+					const col = task.status;
+					if (!prev[col]) return prev;
+					// Skip if we already have this task (e.g. from a refetch)
+					if (prev[col].some((t) => t.id === task.id)) return prev;
+					const updated = [...prev[col], task].sort(
+						(a, b) => a.position - b.position,
+					);
+					return { ...prev, [col]: updated };
+				});
+				toast.info(`New task: "${task.title}"`);
+			};
+			if (isDragging.current) {
+				pendingUpdates.current.push(apply);
+			} else {
+				apply();
+			}
+		},
+		onUpdate: (task) => {
+			const apply = () => {
+				// Find old status before removing from columns
+				let oldStatus: string | null = null;
+				setColumns((prev) => {
+					for (const colId of Object.keys(prev)) {
+						if (prev[colId].some((t) => t.id === task.id)) {
+							oldStatus = colId;
+							break;
+						}
+					}
+					// Remove from old column, insert into (possibly new) column
+					const next = { ...prev };
+					for (const colId of Object.keys(next)) {
+						next[colId] = next[colId].filter((t) => t.id !== task.id);
+					}
+					const col = task.status;
+					if (!next[col]) return prev;
+					next[col] = [...next[col], task].sort(
+						(a, b) => a.position - b.position,
+					);
+					return next;
+				});
+				// Only toast status changes, not position reordering
+				if (oldStatus && oldStatus !== task.status) {
+					toast.info(
+						`"${task.title}" moved to ${COLUMN_LABELS[task.status] ?? task.status}`,
+					);
+				}
+			};
+			if (isDragging.current) {
+				pendingUpdates.current.push(apply);
+			} else {
+				apply();
+			}
+		},
+		onDelete: (taskId) => {
+			const apply = () => {
+				// Find the task title before removing
+				let taskTitle = "a task";
+				for (const tasks of Object.values(columnsRef.current)) {
+					const found = tasks.find((t) => t.id === taskId);
+					if (found) {
+						taskTitle = found.title;
+						break;
+					}
+				}
+				setColumns((prev) => {
+					const next = { ...prev };
+					for (const colId of Object.keys(next)) {
+						next[colId] = next[colId].filter((t) => t.id !== taskId);
+					}
+					return next;
+				});
+				toast.info(`Task "${taskTitle}" was deleted`);
+			};
+			if (isDragging.current) {
+				pendingUpdates.current.push(apply);
+			} else {
+				apply();
+			}
+		},
+		onReconnect,
+	});
 
 	// Reset recentlyMovedToNewContainer after layout settles.
 	// columns is intentionally in deps — we need this to fire on every column change.
@@ -374,7 +481,15 @@ export function KanbanBoard({
 		return null;
 	})();
 
+	function flushPendingUpdates() {
+		for (const fn of pendingUpdates.current) {
+			fn();
+		}
+		pendingUpdates.current = [];
+	}
+
 	function handleDragStart(event: DragStartEvent) {
+		isDragging.current = true;
 		setActiveId(event.active.id);
 		setClonedColumns({ ...columns });
 	}
@@ -493,6 +608,9 @@ export function KanbanBoard({
 		if (allUpdates.length > 0) {
 			await reorderTasks({ data: { tasks: allUpdates } });
 		}
+
+		isDragging.current = false;
+		flushPendingUpdates();
 	}
 
 	function handleDragCancel() {
@@ -501,6 +619,8 @@ export function KanbanBoard({
 		}
 		setActiveId(null);
 		setClonedColumns(null);
+		isDragging.current = false;
+		flushPendingUpdates();
 	}
 
 	// Render static columns during SSR

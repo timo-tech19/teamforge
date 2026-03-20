@@ -11,6 +11,7 @@ TeamForge is a multi-tenant team collaboration platform built with TanStack Star
 | Database | Supabase (Postgres) with Row-Level Security |
 | Auth | Supabase Auth with cookie-based SSR sessions |
 | Styling | Tailwind CSS v4 + shadcn/ui |
+| Toasts | Sonner (bottom-right, rich colors, close button) |
 | Linting/Formatting | Biome (tabs, double quotes, organized imports) |
 | Testing | Vitest (unit), pgTAP (database) |
 | CI/CD | GitHub Actions |
@@ -55,6 +56,7 @@ __root.tsx                    ← bare HTML shell (no header/footer)
 │   └── _public/workspaces.tsx ← /workspaces (workspace list)
 └── w/$slug.tsx               ← workspace layout: shadcn sidebar
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
+    ├── w/$slug/activity.tsx  ← /w/:slug/activity (activity feed, cursor-paginated)
     ├── w/$slug/settings.tsx  ← /w/:slug/settings
     ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
     ├── w/$slug/members.tsx             ← /w/:slug/members (member management)
@@ -132,6 +134,14 @@ These helpers are `SECURITY DEFINER` with `search_path = ''` to prevent search_p
 | `on_auth_user_created` | `auth.users` | Creates a `profiles` row with `display_name` from user metadata |
 | `on_workspace_created` | `workspaces` | Creates a `workspace_members` row with `owner` role for the creator |
 | `on_project_created` | `projects` | Creates a `project_members` row with `lead` role for the creator |
+| `on_task_created` | `tasks` | Logs `task_created` to `activity_log` with task title |
+| `on_task_updated` | `tasks` | Logs `task_updated` on status changes only (skips position-only reordering) |
+| `on_task_deleted` | `tasks` | Logs `task_deleted` to `activity_log` |
+| `on_comment_added` | `comments` | Logs `comment_added` with task title (resolves workspace via project) |
+| `on_member_invited` | `workspace_members` | Logs `member_invited` for pending invitations only |
+| `on_member_removed` | `workspace_members` | Logs `member_removed` (skips cascade deletes) |
+| `on_project_created_log` | `projects` | Logs `project_created` to `activity_log` |
+| `on_project_archived` | `projects` | Logs `project_archived` when status changes to archived |
 
 ## Auth Flow
 
@@ -186,6 +196,57 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `addProjectMember` | POST | Add workspace member to project (lead/admin only) |
 | `updateProjectMemberRole` | POST | Change project member role |
 | `removeProjectMember` | POST | Remove from project (lead/admin or self) |
+| `listActivityByWorkspace` | GET | Cursor-paginated workspace activity feed (20 items/page) |
+
+## Realtime
+
+### Overview
+
+Supabase Realtime is used to push live updates to connected clients. The `tasks` table is added to the `supabase_realtime` publication so the Realtime server broadcasts INSERT/UPDATE/DELETE events via Postgres WAL (Change Data Capture). RLS is enforced per-event — clients only receive rows they can access.
+
+### Channels
+
+| Channel | Type | Purpose |
+|---|---|---|
+| `project:${projectId}` | `postgres_changes` | Live task updates on the kanban board |
+| `workspace:${workspaceId}` | `presence` | Who's online in the workspace |
+
+### Hook: `useRealtimeTasks`
+
+Located in `src/hooks/use-realtime-tasks.ts`. Subscribes to task changes filtered by `project_id`.
+
+**Key behaviors:**
+- **Fetch-on-reconnect:** Calls `onReconnect` on every `SUBSCRIBED` status (initial + reconnection) to fill gaps from missed events
+- **Skip own inserts:** Ignores INSERT events where `created_by` matches the current user (board already shows these via `router.invalidate()`)
+- **Drag-safe:** Updates are deferred while a drag is in progress and flushed after the drag ends, preventing conflicts with optimistic UI
+- **Stable subscription:** Callbacks stored in refs so the channel isn't recreated on every render
+
+### Integration
+
+The `KanbanBoard` component uses the hook directly (it owns the `columns` state). The project detail page passes `projectId`, `currentUserId`, and an `onReconnect` callback (`router.invalidate()`).
+
+### Hook: `useWorkspacePresence`
+
+Located in `src/hooks/use-workspace-presence.ts`. Joins the `workspace:${workspaceId}` presence channel and tracks connected users.
+
+**Key behaviors:**
+- **`channel.track()`** on SUBSCRIBED — announces the current user's presence (userId, displayName, avatarUrl)
+- **`presence sync` event** — flattens and deduplicates the presence state (handles multiple tabs per user)
+- **Auto-remove on disconnect** — Supabase removes users automatically, no manual cleanup
+- **Returns** `onlineUsers` (array with display info) and `onlineIds` (Set for fast membership lookups)
+
+**Used in:**
+- Workspace sidebar (`$slug.tsx`) — "Online" section with green dot indicators
+- Members page (`members.tsx`) — green dot on each online member's avatar
+
+Both pages join the same channel name; Supabase multiplexes the connection.
+
+### Toast Notifications
+
+Sonner `<Toaster />` is mounted in the root layout (`__root.tsx`). Toast calls are fired from:
+
+- **Kanban board** — task INSERT ("New task: ..."), UPDATE with status change ("... moved to Done"), DELETE ("Task ... was deleted"). Only fires for remote events (own changes are skipped by the realtime hook).
+- **Workspace sidebar** — presence JOIN ("... is now online"), LEAVE ("... went offline"). Uses `initialSyncDone` flag to suppress toasts for users already online when we connect.
 
 ## CI/CD
 

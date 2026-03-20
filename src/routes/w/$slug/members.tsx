@@ -18,6 +18,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import { Spinner } from "#/components/ui/spinner";
 import UserAvatar from "#/components/user-avatar";
+import { useWorkspacePresence } from "#/hooks/use-workspace-presence";
 import {
 	listMembers,
 	removeMember,
@@ -58,11 +59,18 @@ const roleLabels: Record<string, string> = {
 };
 
 function MembersPage() {
-	const { workspace } = workspaceRoute.useLoaderData();
+	const { workspace, profile } = workspaceRoute.useLoaderData();
 	const { user } = Route.useRouteContext();
 	const { members } = Route.useLoaderData();
 	const router = useRouter();
 	const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+	const { onlineIds } = useWorkspacePresence({
+		workspaceId: workspace.id,
+		currentUserId: user.id,
+		displayName: profile?.displayName ?? "User",
+		avatarUrl: profile?.avatarUrl ?? null,
+	});
 
 	const wsRole = workspace.role;
 	const isOwner = wsRole === "owner";
@@ -131,10 +139,15 @@ function MembersPage() {
 							key={member.userId}
 							className="flex items-center gap-4 rounded-lg border border-border p-4"
 						>
-							<UserAvatar
-								displayName={member.displayName}
-								avatarUrl={member.avatarUrl}
-							/>
+							<div className="relative">
+								<UserAvatar
+									displayName={member.displayName}
+									avatarUrl={member.avatarUrl}
+								/>
+								{onlineIds.has(member.userId) && (
+									<span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-background bg-emerald-500" />
+								)}
+							</div>
 							<div className="flex-1">
 								<div className="flex items-center gap-2">
 									<span className="font-medium text-foreground">
