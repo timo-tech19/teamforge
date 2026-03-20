@@ -16,6 +16,7 @@ import {
 	Settings,
 	Users,
 } from "lucide-react";
+import { toast } from "sonner";
 import { CreateProjectDialog } from "#/components/create-project-dialog";
 import ThemeToggle from "#/components/theme-toggle";
 import { Button } from "#/components/ui/button";
@@ -84,6 +85,8 @@ function WorkspaceLayout() {
 		currentUserId: user.id,
 		displayName: profile?.displayName ?? "User",
 		avatarUrl: profile?.avatarUrl ?? null,
+		onJoin: (u) => toast.info(`${u.displayName} is now online`),
+		onLeave: (u) => toast(`${u.displayName} went offline`),
 	});
 
 	const navItems = [

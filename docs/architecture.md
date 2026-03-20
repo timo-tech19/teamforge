@@ -11,6 +11,7 @@ TeamForge is a multi-tenant team collaboration platform built with TanStack Star
 | Database | Supabase (Postgres) with Row-Level Security |
 | Auth | Supabase Auth with cookie-based SSR sessions |
 | Styling | Tailwind CSS v4 + shadcn/ui |
+| Toasts | Sonner (bottom-right, rich colors, close button) |
 | Linting/Formatting | Biome (tabs, double quotes, organized imports) |
 | Testing | Vitest (unit), pgTAP (database) |
 | CI/CD | GitHub Actions |
@@ -239,6 +240,13 @@ Located in `src/hooks/use-workspace-presence.ts`. Joins the `workspace:${workspa
 - Members page (`members.tsx`) — green dot on each online member's avatar
 
 Both pages join the same channel name; Supabase multiplexes the connection.
+
+### Toast Notifications
+
+Sonner `<Toaster />` is mounted in the root layout (`__root.tsx`). Toast calls are fired from:
+
+- **Kanban board** — task INSERT ("New task: ..."), UPDATE with status change ("... moved to Done"), DELETE ("Task ... was deleted"). Only fires for remote events (own changes are skipped by the realtime hook).
+- **Workspace sidebar** — presence JOIN ("... is now online"), LEAVE ("... went offline"). Uses `initialSyncDone` flag to suppress toasts for users already online when we connect.
 
 ## CI/CD
 

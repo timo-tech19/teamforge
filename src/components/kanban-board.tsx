@@ -25,6 +25,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Flag, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "#/components/ui/badge";
 import { useRealtimeTasks } from "#/hooks/use-realtime-tasks";
 import { reorderTasks } from "#/lib/task/functions";
@@ -55,6 +56,7 @@ const COLUMNS: Column[] = [
 ];
 
 const COLUMN_IDS = new Set(COLUMNS.map((c) => c.id));
+const COLUMN_LABELS = Object.fromEntries(COLUMNS.map((c) => [c.id, c.label]));
 
 const priorityColors: Record<
 	string,
@@ -343,6 +345,7 @@ export function KanbanBoard({
 					);
 					return { ...prev, [col]: updated };
 				});
+				toast.info(`New task: "${task.title}"`);
 			};
 			if (isDragging.current) {
 				pendingUpdates.current.push(apply);
@@ -352,7 +355,15 @@ export function KanbanBoard({
 		},
 		onUpdate: (task) => {
 			const apply = () => {
+				// Find old status before removing from columns
+				let oldStatus: string | null = null;
 				setColumns((prev) => {
+					for (const colId of Object.keys(prev)) {
+						if (prev[colId].some((t) => t.id === task.id)) {
+							oldStatus = colId;
+							break;
+						}
+					}
 					// Remove from old column, insert into (possibly new) column
 					const next = { ...prev };
 					for (const colId of Object.keys(next)) {
@@ -365,6 +376,12 @@ export function KanbanBoard({
 					);
 					return next;
 				});
+				// Only toast status changes, not position reordering
+				if (oldStatus && oldStatus !== task.status) {
+					toast.info(
+						`"${task.title}" moved to ${COLUMN_LABELS[task.status] ?? task.status}`,
+					);
+				}
 			};
 			if (isDragging.current) {
 				pendingUpdates.current.push(apply);
@@ -374,6 +391,15 @@ export function KanbanBoard({
 		},
 		onDelete: (taskId) => {
 			const apply = () => {
+				// Find the task title before removing
+				let taskTitle = "a task";
+				for (const tasks of Object.values(columnsRef.current)) {
+					const found = tasks.find((t) => t.id === taskId);
+					if (found) {
+						taskTitle = found.title;
+						break;
+					}
+				}
 				setColumns((prev) => {
 					const next = { ...prev };
 					for (const colId of Object.keys(next)) {
@@ -381,6 +407,7 @@ export function KanbanBoard({
 					}
 					return next;
 				});
+				toast.info(`Task "${taskTitle}" was deleted`);
 			};
 			if (isDragging.current) {
 				pendingUpdates.current.push(apply);

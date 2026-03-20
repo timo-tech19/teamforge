@@ -1,5 +1,5 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSupabaseBrowserClient } from "#/lib/supabase/client";
 
 type PresenceState = {
@@ -21,17 +21,30 @@ export function useWorkspacePresence({
 	currentUserId,
 	displayName,
 	avatarUrl,
+	onJoin,
+	onLeave,
 }: {
 	workspaceId: string;
 	currentUserId: string;
 	displayName: string;
 	avatarUrl: string | null;
+	/** Called when another user comes online. */
+	onJoin?: (user: PresenceState) => void;
+	/** Called when another user goes offline. */
+	onLeave?: (user: PresenceState) => void;
 }) {
 	const [onlineUsers, setOnlineUsers] = useState<PresenceState[]>([]);
 	const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
 
+	// Store callbacks in refs to keep the subscription stable
+	const callbacksRef = useRef({ onJoin, onLeave });
+	callbacksRef.current = { onJoin, onLeave };
+
 	useEffect(() => {
 		const supabase = getSupabaseBrowserClient();
+		// Track whether this is the initial sync — don't toast for
+		// users who were already online when we connected.
+		let initialSyncDone = false;
 
 		const channel: RealtimeChannel = supabase.channel(
 			`workspace:${workspaceId}`,
@@ -61,6 +74,31 @@ export function useWorkspacePresence({
 
 			setOnlineUsers(users);
 			setOnlineIds(ids);
+
+			if (!initialSyncDone) {
+				initialSyncDone = true;
+			}
+		});
+
+		// Join events — fires for each new presence key
+		channel.on("presence", { event: "join" }, ({ newPresences }) => {
+			if (!initialSyncDone) return;
+			for (const raw of newPresences) {
+				const p = raw as unknown as PresenceState;
+				if (p.userId !== currentUserId) {
+					callbacksRef.current.onJoin?.(p);
+				}
+			}
+		});
+
+		// Leave events — fires for each removed presence key
+		channel.on("presence", { event: "leave" }, ({ leftPresences }) => {
+			for (const raw of leftPresences) {
+				const p = raw as unknown as PresenceState;
+				if (p.userId !== currentUserId) {
+					callbacksRef.current.onLeave?.(p);
+				}
+			}
 		});
 
 		// Subscribe and track our own presence
