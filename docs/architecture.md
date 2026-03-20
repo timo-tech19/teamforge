@@ -197,6 +197,17 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `updateProjectMemberRole` | POST | Change project member role |
 | `removeProjectMember` | POST | Remove from project (lead/admin or self) |
 | `listActivityByWorkspace` | GET | Cursor-paginated workspace activity feed (20 items/page) |
+| `searchWorkspace` | GET | Search projects, tasks, and members across a workspace (5 results per category) |
+
+## Command Palette
+
+Ctrl+K / Cmd+K opens a global search dialog built with shadcn Command (cmdk). Located in `src/components/command-palette.tsx`.
+
+**Search mode:** Queries projects (by name), tasks (by title), and members (by display name) via `ilike` with 200ms debounce. Results grouped by category.
+
+**Default mode:** Shows navigation shortcuts (Projects, Members, Activity) and quick actions (Invite member).
+
+The palette is mounted in the workspace layout (`$slug.tsx`) and controlled by a keyboard shortcut listener. A trigger button with "Ctrl K" badge is shown in the header.
 
 ## Realtime
 

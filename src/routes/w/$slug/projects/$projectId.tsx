@@ -6,7 +6,8 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { LogOut, Plus, Settings, Shield, Trash2, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { AddProjectMemberDialog } from "#/components/add-project-member-dialog";
 import { CreateTaskDialog } from "#/components/create-task-dialog";
 import { KanbanBoard, type Task } from "#/components/kanban-board";
@@ -52,7 +53,12 @@ import {
 } from "#/lib/project-member/functions";
 import { listTasksByProject } from "#/lib/task/functions";
 
+const searchParams = z.object({
+	task: z.string().optional(),
+});
+
 export const Route = createFileRoute("/w/$slug/projects/$projectId")({
+	validateSearch: searchParams,
 	loader: async ({ params }) => {
 		const project = await getProjectById({
 			data: { projectId: params.projectId },
@@ -87,8 +93,20 @@ function ProjectDetailPage() {
 	const navigate = useNavigate();
 	const router = useRouter();
 
+	const { task: taskParam } = Route.useSearch();
 	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 	const [taskSheetOpen, setTaskSheetOpen] = useState(false);
+
+	// Auto-open task sheet from URL search param (?task=<id>)
+	useEffect(() => {
+		if (taskParam) {
+			const found = tasks.find((t) => t.id === taskParam);
+			if (found) {
+				setSelectedTask(found);
+				setTaskSheetOpen(true);
+			}
+		}
+	}, [taskParam, tasks]);
 
 	// Project settings state
 	const [name, setName] = useState(project.name);
@@ -135,6 +153,22 @@ function ProjectDetailPage() {
 	function handleTaskClick(task: Task) {
 		setSelectedTask(task);
 		setTaskSheetOpen(true);
+		navigate({
+			to: ".",
+			search: { task: task.id },
+			replace: true,
+		});
+	}
+
+	function handleTaskSheetClose(open: boolean) {
+		setTaskSheetOpen(open);
+		if (!open) {
+			navigate({
+				to: ".",
+				search: {},
+				replace: true,
+			});
+		}
 	}
 
 	async function handleSave(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -453,7 +487,7 @@ function ProjectDetailPage() {
 				task={selectedTask}
 				projectId={project.id}
 				open={taskSheetOpen}
-				onOpenChange={setTaskSheetOpen}
+				onOpenChange={handleTaskSheetClose}
 				canDelete={canDeleteTasks}
 				currentUserId={user.id}
 				canModerateComments={canDeleteTasks}
