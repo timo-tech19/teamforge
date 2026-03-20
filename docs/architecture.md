@@ -208,6 +208,7 @@ Supabase Realtime is used to push live updates to connected clients. The `tasks`
 | Channel | Type | Purpose |
 |---|---|---|
 | `project:${projectId}` | `postgres_changes` | Live task updates on the kanban board |
+| `workspace:${workspaceId}` | `presence` | Who's online in the workspace |
 
 ### Hook: `useRealtimeTasks`
 
@@ -222,6 +223,22 @@ Located in `src/hooks/use-realtime-tasks.ts`. Subscribes to task changes filtere
 ### Integration
 
 The `KanbanBoard` component uses the hook directly (it owns the `columns` state). The project detail page passes `projectId`, `currentUserId`, and an `onReconnect` callback (`router.invalidate()`).
+
+### Hook: `useWorkspacePresence`
+
+Located in `src/hooks/use-workspace-presence.ts`. Joins the `workspace:${workspaceId}` presence channel and tracks connected users.
+
+**Key behaviors:**
+- **`channel.track()`** on SUBSCRIBED — announces the current user's presence (userId, displayName, avatarUrl)
+- **`presence sync` event** — flattens and deduplicates the presence state (handles multiple tabs per user)
+- **Auto-remove on disconnect** — Supabase removes users automatically, no manual cleanup
+- **Returns** `onlineUsers` (array with display info) and `onlineIds` (Set for fast membership lookups)
+
+**Used in:**
+- Workspace sidebar (`$slug.tsx`) — "Online" section with green dot indicators
+- Members page (`members.tsx`) — green dot on each online member's avatar
+
+Both pages join the same channel name; Supabase multiplexes the connection.
 
 ## CI/CD
 
