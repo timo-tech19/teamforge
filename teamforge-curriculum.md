@@ -92,6 +92,8 @@ Schema design for multi-tenancy, migration workflows, and team collaboration pat
 - Every EXISTS subquery needs two anchors: the current row (table column) and the current user (auth.uid())
 - The hardest policies chain multiple JOINs inside EXISTS — comments → tasks → projects → workspace_members
 - Activity log uses no INSERT/UPDATE/DELETE policies for authenticated users — entries created only by SECURITY DEFINER triggers
+- **Don't chain .select() after .insert() with AFTER INSERT triggers:** The trigger runs between INSERT and SELECT. If the trigger modifies other tables, the chained SELECT may return stale or unexpected data. Do INSERT and SELECT as separate calls
+- **Guard cascade deletes in triggers:** When a parent is deleted (e.g. workspace), cascade-deleted children fire their own triggers. Check that the parent still exists before logging, or you'll write ghost activity entries for cascade deletions
 - All auth methods produce identical sessions — RLS doesn't know or care how a user authenticated
 - JWTs are readable by anyone (Base64, not encrypted) — the signature prevents tampering, not reading
 - Cookie-based token storage is required for SSR frameworks like TanStack Start so the server can access the session
@@ -115,9 +117,11 @@ Schema design for multi-tenancy, migration workflows, and team collaboration pat
 
 ### Key Insights
 - PostgREST auto-generates JOINs from foreign keys — if you forget a FK in your schema, the embedded select won't work
+- **Embedded select returns arbitrary row:** When joining through a FK (e.g. `.select('role, workspace_members(role)')`), PostgREST returns any matching row. If the current user has membership AND another user does too, you might get the wrong one. Always filter the join by current user ID
 - Cursor-based pagination is always preferred over offset-based for production feeds
 - RPC functions give you database transactions — both operations succeed or both fail, no inconsistent state
 - EXPLAIN ANALYZE is the first debugging tool when queries feel slow — check for Seq Scan
+- **PAGE_SIZE + 1 trick:** Fetch one extra row beyond the page size. If you get it, there's a next page — slice it off and return the cursor. Avoids a separate COUNT(*) query which scans the whole result set
 
 ---
 
@@ -143,6 +147,9 @@ Schema design for multi-tenancy, migration workflows, and team collaboration pat
 - postgres_changes is for database state, broadcast is for ephemeral messages, presence is for connection tracking
 - Channel naming should scope to access boundaries (workspace:uuid, not global channels)
 - Presence auto-removes disconnected users — no manual cleanup needed
+- **REPLICA IDENTITY FULL:** By default, `payload.old` on UPDATE events only contains the primary key. Run `ALTER TABLE x REPLICA IDENTITY FULL` to get the full old row — required for before/after comparisons (e.g. detecting when `assigned_to` changes)
+- **Optimistic UI + Realtime conflict:** If users can drag items (optimistic local state), defer incoming Realtime updates during the drag and flush them after it ends. Otherwise the remote update fights the user's hand mid-drag
+- **Presence multiplexing:** Multiple components joining the same channel name (e.g. sidebar and members page both joining `workspace:uuid`) don't create duplicate connections — Supabase multiplexes them
 
 ---
 
@@ -166,6 +173,9 @@ Schema design for multi-tenancy, migration workflows, and team collaboration pat
 - Choose the Supabase client based on who triggered the function: user JWT for user actions, service_role for system actions
 - Edge Functions excel at short, focused server-side tasks. If you need persistent connections, heavy compute, or long-running jobs, you need a traditional server.
 - Cold starts (200-500ms) exist but are rarely noticeable for user-facing actions
+- **CORS preflight:** Edge Functions run on a different origin than your app. Browsers send an OPTIONS request before the real request — you must respond with Access-Control-Allow-Origin and Access-Control-Allow-Headers or the browser blocks the call
+- **Why Edge Functions need explicit Authorization:** Unlike server functions (which read session cookies via @supabase/ssr), Edge Functions run on a separate Deno server with no cookie access. The only way they know who the user is, is the Authorization header that `supabase.functions.invoke()` attaches automatically
+- **Edge Function vs server function:** If you already have the user's session (SSR framework with cookie auth), a server function does the same job without CORS overhead. Edge Functions earn their keep when you need: external API calls with secrets, database webhook triggers (no user context), or scheduled cron jobs
 
 ---
 
