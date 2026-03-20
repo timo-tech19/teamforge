@@ -17,6 +17,7 @@ import { Route as PublicSignupRouteImport } from './routes/_public/signup'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
 import { Route as WSlugIndexRouteImport } from './routes/w/$slug/index'
 import { Route as WSlugSettingsRouteImport } from './routes/w/$slug/settings'
+import { Route as WSlugMyTasksRouteImport } from './routes/w/$slug/my-tasks'
 import { Route as WSlugMembersRouteImport } from './routes/w/$slug/members'
 import { Route as WSlugActivityRouteImport } from './routes/w/$slug/activity'
 import { Route as WSlugProjectsIndexRouteImport } from './routes/w/$slug/projects/index'
@@ -61,6 +62,11 @@ const WSlugSettingsRoute = WSlugSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => WSlugRoute,
 } as any)
+const WSlugMyTasksRoute = WSlugMyTasksRouteImport.update({
+  id: '/my-tasks',
+  path: '/my-tasks',
+  getParentRoute: () => WSlugRoute,
+} as any)
 const WSlugMembersRoute = WSlugMembersRouteImport.update({
   id: '/members',
   path: '/members',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/w/$slug': typeof WSlugRouteWithChildren
   '/w/$slug/activity': typeof WSlugActivityRoute
   '/w/$slug/members': typeof WSlugMembersRoute
+  '/w/$slug/my-tasks': typeof WSlugMyTasksRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug/': typeof WSlugIndexRoute
   '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/w/$slug/activity': typeof WSlugActivityRoute
   '/w/$slug/members': typeof WSlugMembersRoute
+  '/w/$slug/my-tasks': typeof WSlugMyTasksRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug': typeof WSlugIndexRoute
   '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/_public/': typeof PublicIndexRoute
   '/w/$slug/activity': typeof WSlugActivityRoute
   '/w/$slug/members': typeof WSlugMembersRoute
+  '/w/$slug/my-tasks': typeof WSlugMyTasksRoute
   '/w/$slug/settings': typeof WSlugSettingsRoute
   '/w/$slug/': typeof WSlugIndexRoute
   '/w/$slug/projects/$projectId': typeof WSlugProjectsProjectIdRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/w/$slug'
     | '/w/$slug/activity'
     | '/w/$slug/members'
+    | '/w/$slug/my-tasks'
     | '/w/$slug/settings'
     | '/w/$slug/'
     | '/w/$slug/projects/$projectId'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/'
     | '/w/$slug/activity'
     | '/w/$slug/members'
+    | '/w/$slug/my-tasks'
     | '/w/$slug/settings'
     | '/w/$slug'
     | '/w/$slug/projects/$projectId'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/_public/'
     | '/w/$slug/activity'
     | '/w/$slug/members'
+    | '/w/$slug/my-tasks'
     | '/w/$slug/settings'
     | '/w/$slug/'
     | '/w/$slug/projects/$projectId'
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugSettingsRouteImport
       parentRoute: typeof WSlugRoute
     }
+    '/w/$slug/my-tasks': {
+      id: '/w/$slug/my-tasks'
+      path: '/my-tasks'
+      fullPath: '/w/$slug/my-tasks'
+      preLoaderRoute: typeof WSlugMyTasksRouteImport
+      parentRoute: typeof WSlugRoute
+    }
     '/w/$slug/members': {
       id: '/w/$slug/members'
       path: '/members'
@@ -278,6 +297,7 @@ const PublicRouteWithChildren =
 interface WSlugRouteChildren {
   WSlugActivityRoute: typeof WSlugActivityRoute
   WSlugMembersRoute: typeof WSlugMembersRoute
+  WSlugMyTasksRoute: typeof WSlugMyTasksRoute
   WSlugSettingsRoute: typeof WSlugSettingsRoute
   WSlugIndexRoute: typeof WSlugIndexRoute
   WSlugProjectsProjectIdRoute: typeof WSlugProjectsProjectIdRoute
@@ -287,6 +307,7 @@ interface WSlugRouteChildren {
 const WSlugRouteChildren: WSlugRouteChildren = {
   WSlugActivityRoute: WSlugActivityRoute,
   WSlugMembersRoute: WSlugMembersRoute,
+  WSlugMyTasksRoute: WSlugMyTasksRoute,
   WSlugSettingsRoute: WSlugSettingsRoute,
   WSlugIndexRoute: WSlugIndexRoute,
   WSlugProjectsProjectIdRoute: WSlugProjectsProjectIdRoute,

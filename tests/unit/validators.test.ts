@@ -5,7 +5,9 @@ import { createCommentSchema } from "#/lib/comment/functions";
 import { inviteMemberSchema } from "#/lib/member/functions";
 import { addProjectMemberSchema } from "#/lib/project-member/functions";
 import { createProjectSchema } from "#/lib/project/functions";
+import { searchWorkspaceSchema } from "#/lib/search/functions";
 import { createTaskSchema } from "#/lib/task/functions";
+import { listMyTasksSchema } from "#/lib/task/my-tasks";
 import { createWorkspaceSchema } from "#/lib/workspace/functions";
 
 describe("loginSchema", () => {
@@ -535,6 +537,72 @@ describe("addProjectMemberSchema", () => {
 			projectId: "not-a-uuid",
 			userId: validUuid,
 		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("searchWorkspaceSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid search query", () => {
+		const result = searchWorkspaceSchema.safeParse({
+			workspaceId: validUuid,
+			query: "fix login",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects empty query", () => {
+		const result = searchWorkspaceSchema.safeParse({
+			workspaceId: validUuid,
+			query: "",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects query over 100 characters", () => {
+		const result = searchWorkspaceSchema.safeParse({
+			workspaceId: validUuid,
+			query: "A".repeat(101),
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid workspaceId", () => {
+		const result = searchWorkspaceSchema.safeParse({
+			workspaceId: "not-a-uuid",
+			query: "test",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects missing query", () => {
+		const result = searchWorkspaceSchema.safeParse({
+			workspaceId: validUuid,
+		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("listMyTasksSchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts valid workspaceId", () => {
+		const result = listMyTasksSchema.safeParse({
+			workspaceId: validUuid,
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects invalid workspaceId", () => {
+		const result = listMyTasksSchema.safeParse({
+			workspaceId: "not-a-uuid",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects missing workspaceId", () => {
+		const result = listMyTasksSchema.safeParse({});
 		expect(result.success).toBe(false);
 	});
 });

@@ -10,6 +10,8 @@ import {
 	UserPlus,
 } from "lucide-react";
 import { useState } from "react";
+import { RouteError } from "#/components/route-error";
+import { ListPageSkeleton } from "#/components/route-pending";
 import { Button } from "#/components/ui/button";
 import { Spinner } from "#/components/ui/spinner";
 import UserAvatar from "#/components/user-avatar";
@@ -31,6 +33,10 @@ export const Route = createFileRoute("/w/$slug/activity")({
 		return { activity };
 	},
 	component: ActivityPage,
+	pendingComponent: ListPageSkeleton,
+	errorComponent: ({ error, reset }) => (
+		<RouteError error={error} reset={reset} />
+	),
 });
 
 // ── Action display config ─────────────────────────────────────────────

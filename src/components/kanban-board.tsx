@@ -27,6 +27,7 @@ import { Flag, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "#/components/ui/badge";
+import UserAvatar from "#/components/user-avatar";
 import { useRealtimeTasks } from "#/hooks/use-realtime-tasks";
 import { reorderTasks } from "#/lib/task/functions";
 
@@ -41,6 +42,8 @@ export type Task = {
 	position: number;
 	dueDate: string | null;
 	assignedTo: string | null;
+	assigneeName: string | null;
+	assigneeAvatar: string | null;
 	createdBy: string | null;
 	createdAt: string;
 };
@@ -157,6 +160,15 @@ function TaskCard({
 							<span className="text-[10px] text-muted-foreground">
 								{task.dueDate}
 							</span>
+						)}
+						{task.assigneeName && (
+							<div className="ml-auto" title={task.assigneeName}>
+								<UserAvatar
+									displayName={task.assigneeName}
+									avatarUrl={task.assigneeAvatar}
+									size="sm"
+								/>
+							</div>
 						)}
 					</div>
 				</div>
@@ -353,7 +365,7 @@ export function KanbanBoard({
 				apply();
 			}
 		},
-		onUpdate: (task) => {
+		onUpdate: (task, oldTask) => {
 			const apply = () => {
 				// Find old status before removing from columns
 				let oldStatus: string | null = null;
@@ -381,6 +393,13 @@ export function KanbanBoard({
 					toast.info(
 						`"${task.title}" moved to ${COLUMN_LABELS[task.status] ?? task.status}`,
 					);
+				}
+				// Toast when assigned to the current user
+				if (
+					task.assignedTo === currentUserId &&
+					oldTask.assignedTo !== currentUserId
+				) {
+					toast.info(`You were assigned to "${task.title}"`);
 				}
 			};
 			if (isDragging.current) {

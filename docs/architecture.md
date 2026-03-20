@@ -56,6 +56,7 @@ __root.tsx                    ← bare HTML shell (no header/footer)
 │   └── _public/workspaces.tsx ← /workspaces (workspace list)
 └── w/$slug.tsx               ← workspace layout: shadcn sidebar
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
+    ├── w/$slug/my-tasks.tsx  ← /w/:slug/my-tasks (cross-project task list for current user)
     ├── w/$slug/activity.tsx  ← /w/:slug/activity (activity feed, cursor-paginated)
     ├── w/$slug/settings.tsx  ← /w/:slug/settings
     ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
@@ -197,6 +198,38 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `updateProjectMemberRole` | POST | Change project member role |
 | `removeProjectMember` | POST | Remove from project (lead/admin or self) |
 | `listActivityByWorkspace` | GET | Cursor-paginated workspace activity feed (20 items/page) |
+| `searchWorkspace` | GET | Search projects, tasks, and members across a workspace (5 results per category) |
+| `listMyTasks` | GET | All tasks assigned to current user across all projects in workspace |
+| `listUpcomingTasks` | GET | User's top 5 assigned tasks with due dates (for dashboard) |
+| `listRecentActivity` | GET | Last 10 activity log entries (for dashboard) |
+
+## Edge Functions
+
+| Function | Invocation | Auth | Purpose |
+|---|---|---|---|
+| `workspace-stats` | Client (`supabase.functions.invoke`) | User JWT (RLS applies) | Aggregated workspace stats (projects, tasks, members) |
+
+Edge Functions live in `supabase/functions/<name>/index.ts` and run on the Deno runtime. The `workspace-stats` function demonstrates client invocation — the user's JWT is forwarded automatically via `supabase.functions.invoke()`, so all queries respect RLS. Admins see workspace-wide stats; regular members see only their own.
+
+## Dashboard
+
+The workspace dashboard (`/w/:slug`) shows:
+
+- **Stats cards** — from Edge Function: active projects, open tasks, tasks due this week, member count (admin only)
+- **Upcoming tasks** — user's next 5 tasks with due dates, linked to task detail via `?task=` param
+- **Recent activity** — last 10 activity log entries with actor avatars and relative timestamps
+
+Role gating: admins see workspace-wide counts; regular members see personal stats only. The `totalMembers` card is hidden for non-admins.
+
+## Command Palette
+
+Ctrl+K / Cmd+K opens a global search dialog built with shadcn Command (cmdk). Located in `src/components/command-palette.tsx`.
+
+**Search mode:** Queries projects (by name), tasks (by title), and members (by display name) via `ilike` with 200ms debounce. Results grouped by category.
+
+**Default mode:** Shows navigation shortcuts (Projects, Members, Activity) and quick actions (Invite member).
+
+The palette is mounted in the workspace layout (`$slug.tsx`) and controlled by a keyboard shortcut listener. A trigger button with "Ctrl K" badge is shown in the header.
 
 ## Realtime
 
@@ -245,8 +278,29 @@ Both pages join the same channel name; Supabase multiplexes the connection.
 
 Sonner `<Toaster />` is mounted in the root layout (`__root.tsx`). Toast calls are fired from:
 
-- **Kanban board** — task INSERT ("New task: ..."), UPDATE with status change ("... moved to Done"), DELETE ("Task ... was deleted"). Only fires for remote events (own changes are skipped by the realtime hook).
+- **Kanban board** — task INSERT ("New task: ..."), UPDATE with status change ("... moved to Done"), assignment ("You were assigned to ..."), DELETE ("Task ... was deleted"). Only fires for remote events (own changes are skipped by the realtime hook).
 - **Workspace sidebar** — presence JOIN ("... is now online"), LEAVE ("... went offline"). Uses `initialSyncDone` flag to suppress toasts for users already online when we connect.
+
+## Loading & Error Handling
+
+### Skeleton Loaders (`pendingComponent`)
+
+Each route defines a `pendingComponent` that renders skeleton placeholders while the loader runs. Located in `src/components/route-pending.tsx`:
+
+| Skeleton | Used by |
+|---|---|
+| `WorkspaceLayoutSkeleton` | Workspace layout (`$slug.tsx`) — sidebar + content area |
+| `KanbanSkeleton` | Project detail (`$projectId.tsx`) — 5 columns with card placeholders |
+| `ListPageSkeleton` | Activity, Members, My Tasks — heading + list items |
+
+### Error Boundaries (`errorComponent`)
+
+Each route defines an `errorComponent` with the error message and a retry button. Located in `src/components/route-error.tsx`:
+
+- **`GlobalError`** — full-screen error for the root route and workspace layout
+- **`RouteError`** — in-page error for child routes (project detail, activity, members, my-tasks)
+
+Both call the router's `reset` function on retry, which re-runs the loader.
 
 ## CI/CD
 
@@ -261,3 +315,4 @@ Runs on every PR to `main`:
 
 Runs on push to `main`:
 1. **Deploy migrations** — links to production Supabase project and runs `supabase db push`
+2. **Deploy Edge Functions** — deploys all functions in `supabase/functions/` via `supabase functions deploy`

@@ -7,7 +7,9 @@ import {
 } from "@tanstack/react-router";
 import {
 	Activity,
+	CheckSquare,
 	ChevronsUpDown,
+	Command,
 	Folder,
 	Home,
 	Layers,
@@ -16,8 +18,12 @@ import {
 	Settings,
 	Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CommandPalette } from "#/components/command-palette";
 import { CreateProjectDialog } from "#/components/create-project-dialog";
+import { GlobalError } from "#/components/route-error";
+import { WorkspaceLayoutSkeleton } from "#/components/route-pending";
 import ThemeToggle from "#/components/theme-toggle";
 import { Button } from "#/components/ui/button";
 import {
@@ -72,6 +78,10 @@ export const Route = createFileRoute("/w/$slug")({
 		return { workspace, profile, projects };
 	},
 	component: WorkspaceLayout,
+	pendingComponent: WorkspaceLayoutSkeleton,
+	errorComponent: ({ error, reset }) => (
+		<GlobalError error={error} reset={reset} />
+	),
 });
 
 function WorkspaceLayout() {
@@ -79,6 +89,19 @@ function WorkspaceLayout() {
 	const { workspace, profile, projects } = Route.useLoaderData();
 
 	const isAdmin = workspace.role === "owner" || workspace.role === "admin";
+
+	// Command palette state + keyboard shortcut
+	const [commandOpen, setCommandOpen] = useState(false);
+	useEffect(() => {
+		function handleKeyDown(e: KeyboardEvent) {
+			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+				e.preventDefault();
+				setCommandOpen((prev) => !prev);
+			}
+		}
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, []);
 
 	const { onlineUsers } = useWorkspacePresence({
 		workspaceId: workspace.id,
@@ -91,6 +114,12 @@ function WorkspaceLayout() {
 
 	const navItems = [
 		{ label: "Dashboard", icon: Home, to: ".", segment: "" },
+		{
+			label: "My Tasks",
+			icon: CheckSquare,
+			to: "./my-tasks",
+			segment: "my-tasks",
+		},
 		{
 			label: "Activity",
 			icon: Activity,
@@ -304,6 +333,18 @@ function WorkspaceLayout() {
 			<SidebarInset>
 				<header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
 					<SidebarTrigger className="-ml-1" />
+					<Button
+						variant="outline"
+						size="sm"
+						className="hidden gap-2 text-muted-foreground sm:flex"
+						onClick={() => setCommandOpen(true)}
+					>
+						<Command className="size-3.5" />
+						<span className="text-xs">Search...</span>
+						<kbd className="pointer-events-none rounded border border-border bg-muted px-1.5 text-[10px] font-medium">
+							Ctrl K
+						</kbd>
+					</Button>
 					<div className="flex items-center gap-2">
 						<ThemeToggle />
 						{profile ? (
@@ -344,6 +385,13 @@ function WorkspaceLayout() {
 					<Outlet />
 				</div>
 			</SidebarInset>
+
+			<CommandPalette
+				workspaceId={workspace.id}
+				workspaceSlug={workspace.slug}
+				open={commandOpen}
+				onOpenChange={setCommandOpen}
+			/>
 		</SidebarProvider>
 	);
 }

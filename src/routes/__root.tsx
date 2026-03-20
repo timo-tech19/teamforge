@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import { Toaster } from "sonner";
+import { GlobalError } from "#/components/route-error";
 
 import appCss from "../styles.css?url";
 
@@ -36,6 +37,9 @@ export const Route = createRootRoute({
 	}),
 	shellComponent: RootDocument,
 	component: RootLayout,
+	errorComponent: ({ error, reset }) => (
+		<GlobalError error={error} reset={reset} />
+	),
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
