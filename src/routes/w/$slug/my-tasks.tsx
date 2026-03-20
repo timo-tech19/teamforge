@@ -114,7 +114,7 @@ function MyTasksPage() {
 				tasks: [],
 			});
 		}
-		grouped.get(task.projectId)!.tasks.push(task);
+		grouped.get(task.projectId)?.tasks.push(task);
 	}
 
 	return (
@@ -129,7 +129,7 @@ function MyTasksPage() {
 				</div>
 				<div className="flex items-center gap-2">
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="w-[140px]">
+						<SelectTrigger className="w-35">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -141,7 +141,7 @@ function MyTasksPage() {
 						</SelectContent>
 					</Select>
 					<Select value={priorityFilter} onValueChange={setPriorityFilter}>
-						<SelectTrigger className="w-[140px]">
+						<SelectTrigger className="w-35">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>

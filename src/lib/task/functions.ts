@@ -70,9 +70,7 @@ export const listTasksByProject = createServerFn({ method: "GET" })
 						.in("id", assigneeIds)
 				: { data: [] };
 
-		const profileMap = new Map(
-			(profiles ?? []).map((p) => [p.id, p]),
-		);
+		const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
 
 		return tasks.map((task) => {
 			const assignee = task.assigned_to

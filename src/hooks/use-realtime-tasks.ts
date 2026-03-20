@@ -96,9 +96,7 @@ export function useRealtimeTasks({
 				},
 				(payload) => {
 					const task = rowToTask(payload.new);
-					const oldTask = rowToTask(
-						payload.old as Record<string, unknown>,
-					);
+					const oldTask = rowToTask(payload.old as Record<string, unknown>);
 					callbacksRef.current.onUpdate(task, oldTask);
 				},
 			)
