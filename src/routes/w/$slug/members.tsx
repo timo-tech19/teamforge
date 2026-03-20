@@ -7,6 +7,8 @@ import {
 import { LogOut, Shield, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { InviteMemberDialog } from "#/components/invite-member-dialog";
+import { RouteError } from "#/components/route-error";
+import { ListPageSkeleton } from "#/components/route-pending";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -40,6 +42,10 @@ export const Route = createFileRoute("/w/$slug/members")({
 		return { members };
 	},
 	component: MembersPage,
+	pendingComponent: ListPageSkeleton,
+	errorComponent: ({ error, reset }) => (
+		<RouteError error={error} reset={reset} />
+	),
 });
 
 const workspaceRoute = getRouteApi("/w/$slug");

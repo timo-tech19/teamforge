@@ -6,6 +6,8 @@ import {
 } from "@tanstack/react-router";
 import { Flag, Folder } from "lucide-react";
 import { useState } from "react";
+import { RouteError } from "#/components/route-error";
+import { ListPageSkeleton } from "#/components/route-pending";
 import { Badge } from "#/components/ui/badge";
 import {
 	Select,
@@ -31,6 +33,10 @@ export const Route = createFileRoute("/w/$slug/my-tasks")({
 		return { myTasks };
 	},
 	component: MyTasksPage,
+	pendingComponent: ListPageSkeleton,
+	errorComponent: ({ error, reset }) => (
+		<RouteError error={error} reset={reset} />
+	),
 });
 
 const workspaceRoute = getRouteApi("/w/$slug");

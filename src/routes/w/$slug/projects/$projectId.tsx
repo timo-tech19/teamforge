@@ -11,6 +11,8 @@ import { z } from "zod";
 import { AddProjectMemberDialog } from "#/components/add-project-member-dialog";
 import { CreateTaskDialog } from "#/components/create-task-dialog";
 import { KanbanBoard, type Task } from "#/components/kanban-board";
+import { RouteError } from "#/components/route-error";
+import { KanbanSkeleton } from "#/components/route-pending";
 import { TaskDetailSheet } from "#/components/task-detail-sheet";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -76,6 +78,10 @@ export const Route = createFileRoute("/w/$slug/projects/$projectId")({
 		return { project, tasks, projectMembers };
 	},
 	component: ProjectDetailPage,
+	pendingComponent: KanbanSkeleton,
+	errorComponent: ({ error, reset }) => (
+		<RouteError error={error} reset={reset} />
+	),
 });
 
 const workspaceRoute = getRouteApi("/w/$slug");

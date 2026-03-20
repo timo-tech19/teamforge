@@ -258,8 +258,29 @@ Both pages join the same channel name; Supabase multiplexes the connection.
 
 Sonner `<Toaster />` is mounted in the root layout (`__root.tsx`). Toast calls are fired from:
 
-- **Kanban board** — task INSERT ("New task: ..."), UPDATE with status change ("... moved to Done"), DELETE ("Task ... was deleted"). Only fires for remote events (own changes are skipped by the realtime hook).
+- **Kanban board** — task INSERT ("New task: ..."), UPDATE with status change ("... moved to Done"), assignment ("You were assigned to ..."), DELETE ("Task ... was deleted"). Only fires for remote events (own changes are skipped by the realtime hook).
 - **Workspace sidebar** — presence JOIN ("... is now online"), LEAVE ("... went offline"). Uses `initialSyncDone` flag to suppress toasts for users already online when we connect.
+
+## Loading & Error Handling
+
+### Skeleton Loaders (`pendingComponent`)
+
+Each route defines a `pendingComponent` that renders skeleton placeholders while the loader runs. Located in `src/components/route-pending.tsx`:
+
+| Skeleton | Used by |
+|---|---|
+| `WorkspaceLayoutSkeleton` | Workspace layout (`$slug.tsx`) — sidebar + content area |
+| `KanbanSkeleton` | Project detail (`$projectId.tsx`) — 5 columns with card placeholders |
+| `ListPageSkeleton` | Activity, Members, My Tasks — heading + list items |
+
+### Error Boundaries (`errorComponent`)
+
+Each route defines an `errorComponent` with the error message and a retry button. Located in `src/components/route-error.tsx`:
+
+- **`GlobalError`** — full-screen error for the root route and workspace layout
+- **`RouteError`** — in-page error for child routes (project detail, activity, members, my-tasks)
+
+Both call the router's `reset` function on retry, which re-runs the loader.
 
 ## CI/CD
 

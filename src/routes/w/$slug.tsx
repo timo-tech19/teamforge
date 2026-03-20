@@ -22,6 +22,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CommandPalette } from "#/components/command-palette";
 import { CreateProjectDialog } from "#/components/create-project-dialog";
+import { GlobalError } from "#/components/route-error";
+import { WorkspaceLayoutSkeleton } from "#/components/route-pending";
 import ThemeToggle from "#/components/theme-toggle";
 import { Button } from "#/components/ui/button";
 import {
@@ -76,6 +78,10 @@ export const Route = createFileRoute("/w/$slug")({
 		return { workspace, profile, projects };
 	},
 	component: WorkspaceLayout,
+	pendingComponent: WorkspaceLayoutSkeleton,
+	errorComponent: ({ error, reset }) => (
+		<GlobalError error={error} reset={reset} />
+	),
 });
 
 function WorkspaceLayout() {
