@@ -17,6 +17,10 @@ export function rowToTask(row: Record<string, unknown>): Task {
 		position: row.position as number,
 		dueDate: (row.due_date as string) ?? null,
 		assignedTo: (row.assigned_to as string) ?? null,
+		// Realtime payloads don't include profile data — these will be
+		// filled on the next refetch (fetch-on-reconnect or router.invalidate)
+		assigneeName: null,
+		assigneeAvatar: null,
 		createdBy: (row.created_by as string) ?? null,
 		createdAt: row.created_at as string,
 	};
@@ -30,7 +34,7 @@ type UseRealtimeTasksOptions = {
 	/** Called when a task is inserted by another user. */
 	onInsert: (task: Task) => void;
 	/** Called when a task is updated by another user. */
-	onUpdate: (task: Task) => void;
+	onUpdate: (task: Task, oldTask: Task) => void;
 	/** Called when a task is deleted by another user. */
 	onDelete: (taskId: string) => void;
 	/** Called on SUBSCRIBED status to fill gaps from disconnection. */
@@ -92,7 +96,10 @@ export function useRealtimeTasks({
 				},
 				(payload) => {
 					const task = rowToTask(payload.new);
-					callbacksRef.current.onUpdate(task);
+					const oldTask = rowToTask(
+						payload.old as Record<string, unknown>,
+					);
+					callbacksRef.current.onUpdate(task, oldTask);
 				},
 			)
 			.on(

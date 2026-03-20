@@ -56,18 +56,43 @@ export const listTasksByProject = createServerFn({ method: "GET" })
 			throw new Error(error.message);
 		}
 
-		return tasks.map((task) => ({
-			id: task.id,
-			title: task.title,
-			description: task.description,
-			status: task.status,
-			priority: task.priority,
-			position: task.position,
-			dueDate: task.due_date,
-			assignedTo: task.assigned_to,
-			createdBy: task.created_by,
-			createdAt: task.created_at,
-		}));
+		// Batch-fetch profiles for assigned users
+		const assigneeIds = [
+			...new Set(
+				tasks.filter((t) => t.assigned_to).map((t) => t.assigned_to as string),
+			),
+		];
+		const { data: profiles } =
+			assigneeIds.length > 0
+				? await supabase
+						.from("profiles")
+						.select("id, display_name, avatar_url")
+						.in("id", assigneeIds)
+				: { data: [] };
+
+		const profileMap = new Map(
+			(profiles ?? []).map((p) => [p.id, p]),
+		);
+
+		return tasks.map((task) => {
+			const assignee = task.assigned_to
+				? profileMap.get(task.assigned_to)
+				: null;
+			return {
+				id: task.id,
+				title: task.title,
+				description: task.description,
+				status: task.status,
+				priority: task.priority,
+				position: task.position,
+				dueDate: task.due_date,
+				assignedTo: task.assigned_to,
+				assigneeName: assignee?.display_name ?? null,
+				assigneeAvatar: assignee?.avatar_url ?? null,
+				createdBy: task.created_by,
+				createdAt: task.created_at,
+			};
+		});
 	});
 
 export const createTask = createServerFn({ method: "POST" })

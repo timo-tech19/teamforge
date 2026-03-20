@@ -25,6 +25,8 @@ describe("rowToTask", () => {
 			position: 2,
 			dueDate: "2026-04-01",
 			assignedTo: "user-456",
+			assigneeName: null,
+			assigneeAvatar: null,
 			createdBy: "user-789",
 			createdAt: "2026-03-20T09:00:00Z",
 		});
@@ -48,6 +50,8 @@ describe("rowToTask", () => {
 		expect(task.description).toBeNull();
 		expect(task.dueDate).toBeNull();
 		expect(task.assignedTo).toBeNull();
+		expect(task.assigneeName).toBeNull();
+		expect(task.assigneeAvatar).toBeNull();
 		expect(task.createdBy).toBeNull();
 	});
 
@@ -65,6 +69,8 @@ describe("rowToTask", () => {
 		expect(task.description).toBeNull();
 		expect(task.dueDate).toBeNull();
 		expect(task.assignedTo).toBeNull();
+		expect(task.assigneeName).toBeNull();
+		expect(task.assigneeAvatar).toBeNull();
 		expect(task.createdBy).toBeNull();
 	});
 });
