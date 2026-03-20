@@ -82,6 +82,10 @@ export const inviteMember = createServerFn({ method: "POST" })
 			return { error: "This user is already a member of the workspace" };
 		}
 
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+
 		// Insert membership — RLS enforces that only owners/admins can do this
 		const { error: insertError } = await supabase
 			.from("workspace_members")
@@ -90,6 +94,7 @@ export const inviteMember = createServerFn({ method: "POST" })
 				workspace_id: data.workspaceId,
 				role: data.role ?? "member",
 				status: "pending",
+				invited_by: user?.id ?? null,
 			});
 
 		if (insertError) {

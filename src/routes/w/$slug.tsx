@@ -6,6 +6,7 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import {
+	Activity,
 	ChevronsUpDown,
 	Folder,
 	Home,
@@ -78,6 +79,12 @@ function WorkspaceLayout() {
 
 	const navItems = [
 		{ label: "Dashboard", icon: Home, to: ".", segment: "" },
+		{
+			label: "Activity",
+			icon: Activity,
+			to: "./activity",
+			segment: "activity",
+		},
 		{ label: "Projects", icon: Layers, to: "./projects", segment: "projects" },
 		{ label: "Members", icon: Users, to: "./members", segment: "members" },
 		...(isAdmin

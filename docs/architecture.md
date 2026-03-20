@@ -55,6 +55,7 @@ __root.tsx                    ← bare HTML shell (no header/footer)
 │   └── _public/workspaces.tsx ← /workspaces (workspace list)
 └── w/$slug.tsx               ← workspace layout: shadcn sidebar
     ├── w/$slug/index.tsx     ← /w/:slug (dashboard)
+    ├── w/$slug/activity.tsx  ← /w/:slug/activity (activity feed, cursor-paginated)
     ├── w/$slug/settings.tsx  ← /w/:slug/settings
     ├── w/$slug/projects/index.tsx      ← /w/:slug/projects (project list)
     ├── w/$slug/members.tsx             ← /w/:slug/members (member management)
@@ -132,6 +133,14 @@ These helpers are `SECURITY DEFINER` with `search_path = ''` to prevent search_p
 | `on_auth_user_created` | `auth.users` | Creates a `profiles` row with `display_name` from user metadata |
 | `on_workspace_created` | `workspaces` | Creates a `workspace_members` row with `owner` role for the creator |
 | `on_project_created` | `projects` | Creates a `project_members` row with `lead` role for the creator |
+| `on_task_created` | `tasks` | Logs `task_created` to `activity_log` with task title |
+| `on_task_updated` | `tasks` | Logs `task_updated` on status changes only (skips position-only reordering) |
+| `on_task_deleted` | `tasks` | Logs `task_deleted` to `activity_log` |
+| `on_comment_added` | `comments` | Logs `comment_added` with task title (resolves workspace via project) |
+| `on_member_invited` | `workspace_members` | Logs `member_invited` for pending invitations only |
+| `on_member_removed` | `workspace_members` | Logs `member_removed` (skips cascade deletes) |
+| `on_project_created_log` | `projects` | Logs `project_created` to `activity_log` |
+| `on_project_archived` | `projects` | Logs `project_archived` when status changes to archived |
 
 ## Auth Flow
 
@@ -186,6 +195,7 @@ Server functions use `createServerFn` from TanStack Start. They run on the serve
 | `addProjectMember` | POST | Add workspace member to project (lead/admin only) |
 | `updateProjectMemberRole` | POST | Change project member role |
 | `removeProjectMember` | POST | Remove from project (lead/admin or self) |
+| `listActivityByWorkspace` | GET | Cursor-paginated workspace activity feed (20 items/page) |
 
 ## Realtime
 

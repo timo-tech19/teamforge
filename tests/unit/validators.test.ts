@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listActivitySchema } from "#/lib/activity/functions";
 import { loginSchema, signupSchema } from "#/lib/auth/functions";
 import { createCommentSchema } from "#/lib/comment/functions";
 import { inviteMemberSchema } from "#/lib/member/functions";
@@ -446,6 +447,45 @@ describe("inviteMemberSchema", () => {
 			workspaceId: "not-a-uuid",
 			email: "user@example.com",
 		});
+		expect(result.success).toBe(false);
+	});
+});
+
+describe("listActivitySchema", () => {
+	const validUuid = "550e8400-e29b-41d4-a716-446655440000";
+
+	it("accepts workspaceId only (no cursor)", () => {
+		const result = listActivitySchema.safeParse({
+			workspaceId: validUuid,
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts workspaceId with cursor", () => {
+		const result = listActivitySchema.safeParse({
+			workspaceId: validUuid,
+			cursor: "2026-03-20T09:00:00.000Z",
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("rejects invalid workspaceId", () => {
+		const result = listActivitySchema.safeParse({
+			workspaceId: "not-a-uuid",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects invalid cursor format", () => {
+		const result = listActivitySchema.safeParse({
+			workspaceId: validUuid,
+			cursor: "not-a-datetime",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("rejects missing workspaceId", () => {
+		const result = listActivitySchema.safeParse({});
 		expect(result.success).toBe(false);
 	});
 });
